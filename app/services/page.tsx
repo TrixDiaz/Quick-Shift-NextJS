@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, Upload, Camera, User, FileText, Eye, X } from "lucide-react"
+import { CheckCircle, Upload, Camera, User, Eye, X } from "lucide-react"
 import Image from "next/image"
 
 const steps = [
@@ -60,9 +60,13 @@ export default function IdentityVerificationForm() {
         ssn: "",
         frontId: null as File | null,
         backId: null as File | null,
+        frontIdCaptured: "" as string,
+        backIdCaptured: "" as string,
         selfie: "" as string,
     })
     const [ cameraActive, setCameraActive ] = useState(false)
+    const [ idCaptureMode, setIdCaptureMode ] = useState<"upload" | "capture">("upload")
+    const [ currentIdSide, setCurrentIdSide ] = useState<"front" | "back">("front")
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -130,12 +134,32 @@ export default function IdentityVerificationForm() {
         }
     }
 
+    const captureIdPhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const ctx = canvasRef.current.getContext("2d")
+            if (ctx) {
+                ctx.drawImage(videoRef.current, 0, 0, 400, 300)
+                const imageData = canvasRef.current.toDataURL("image/png")
+                if (currentIdSide === "front") {
+                    setFormData({ ...formData, frontIdCaptured: imageData })
+                } else {
+                    setFormData({ ...formData, backIdCaptured: imageData })
+                }
+                stopCamera()
+            }
+        }
+    }
+
     const isStepValid = (stepId: number) => {
         switch (stepId) {
             case 1:
                 return formData.fullName && formData.phone && formData.email && formData.state && formData.address && formData.ssn
             case 2:
-                return formData.frontId && formData.backId
+                if (idCaptureMode === "upload") {
+                    return formData.frontId && formData.backId
+                } else {
+                    return formData.frontIdCaptured && formData.backIdCaptured
+                }
             case 3:
                 return formData.selfie
             case 4:
@@ -232,141 +256,314 @@ export default function IdentityVerificationForm() {
             case 2:
                 return (
                     <div className="w-full space-y-8">
-                        <div className="grid gap-8 md:grid-cols-2">
-                            <Card className="border-dashed border-2 transition-colors">
-                                <CardContent className="p-8 text-center">
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="frontId" className="text-lg font-medium">
-                                                Front of ID *
-                                            </Label>
-                                            <p className="text-sm">
-                                                Upload the front side of your government-issued ID
-                                            </p>
-                                        </div>
-                                        <div className="w-full">
-                                            {!formData.frontId && (
-                                                <div className="flex flex-col items-center justify-center w-full">
-                                                    <label
-                                                        htmlFor="frontId"
-                                                        className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
-                                                    >
-                                                        <svg
-                                                            className="w-10 h-10 mb-3 text-gray-400"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                            />
-                                                        </svg>
-                                                        <p className="text-sm text-gray-500">Click to upload front ID</p>
-                                                        <Input
-                                                            id="frontId"
-                                                            type="file"
-                                                            name="frontId"
-                                                            accept="image/*"
-                                                            onChange={handleFileChange}
-                                                            className="hidden"
-                                                        />
-                                                    </label>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {formData.frontId && (
-                                            <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                <Image
-                                                    width={400}
-                                                    height={300}
-                                                    src={URL.createObjectURL(formData.frontId)}
-                                                    alt="Front ID Preview"
-                                                    className="w-full h-full object-contain"
-                                                />
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleFileRemove("frontId")}
-                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-dashed border-2 transition-colors">
-                                <CardContent className="p-8 text-center">
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="backId" className="text-lg font-medium">
-                                                Back of ID *
-                                            </Label>
-                                            <p className="text-sm">
-                                                Upload the back side of your government-issued ID
-                                            </p>
-                                        </div>
-                                        <div className="w-full">
-                                            {!formData.backId && (
-                                                <div className="flex flex-col items-center justify-center w-full">
-                                                    <label
-                                                        htmlFor="backId"
-                                                        className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
-                                                    >
-                                                        <svg
-                                                            className="w-10 h-10 mb-3 text-gray-400"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                            />
-                                                        </svg>
-                                                        <p className="text-sm text-gray-500">Click to upload back ID</p>
-                                                        <Input
-                                                            id="backId"
-                                                            type="file"
-                                                            name="backId"
-                                                            accept="image/*"
-                                                            onChange={handleFileChange}
-                                                            className="hidden"
-                                                        />
-                                                    </label>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {formData.backId && (
-                                            <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                <Image
-                                                    width={400}
-                                                    height={300}
-                                                    src={URL.createObjectURL(formData.backId)}
-                                                    alt="Back ID Preview"
-                                                    className="w-full h-full object-contain"
-                                                />
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleFileRemove("backId")}
-                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                        {/* Mode Selection */}
+                        <div className="flex justify-center mb-6">
+                            <div className="flex rounded-lg p-1">
+                                <Button
+                                    variant={idCaptureMode === "upload" ? "default" : "ghost"}
+                                    onClick={() => setIdCaptureMode("upload")}
+                                    className="px-6"
+                                >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Upload Photos
+                                </Button>
+                                <Button
+                                    variant={idCaptureMode === "capture" ? "default" : "ghost"}
+                                    onClick={() => setIdCaptureMode("capture")}
+                                    className="px-6"
+                                >
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    Capture Photos
+                                </Button>
+                            </div>
                         </div>
+
+                        {idCaptureMode === "upload" ? (
+                            /* Upload Mode */
+                            <div className="grid gap-8 md:grid-cols-2">
+                                <Card className="border-dashed border-2 transition-colors">
+                                    <CardContent className="p-8 text-center">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="frontId" className="text-lg font-medium">
+                                                    Front of ID *
+                                                </Label>
+                                                <p className="text-sm">
+                                                    Upload the front side of your government-issued ID
+                                                </p>
+                                            </div>
+                                            <div className="w-full">
+                                                {!formData.frontId && (
+                                                    <div className="flex flex-col items-center justify-center w-full">
+                                                        <label
+                                                            htmlFor="frontId"
+                                                            className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
+                                                        >
+                                                            <svg
+                                                                className="w-10 h-10 mb-3 text-gray-400"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                                />
+                                                            </svg>
+                                                            <p className="text-sm text-gray-500">Click to upload front ID</p>
+                                                            <Input
+                                                                id="frontId"
+                                                                type="file"
+                                                                name="frontId"
+                                                                accept="image/*"
+                                                                onChange={handleFileChange}
+                                                                className="hidden"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {formData.frontId && (
+                                                <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                    <Image
+                                                        width={400}
+                                                        height={300}
+                                                        src={URL.createObjectURL(formData.frontId)}
+                                                        alt="Front ID Preview"
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleFileRemove("frontId")}
+                                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-dashed border-2 transition-colors">
+                                    <CardContent className="p-8 text-center">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="backId" className="text-lg font-medium">
+                                                    Back of ID *
+                                                </Label>
+                                                <p className="text-sm">
+                                                    Upload the back side of your government-issued ID
+                                                </p>
+                                            </div>
+                                            <div className="w-full">
+                                                {!formData.backId && (
+                                                    <div className="flex flex-col items-center justify-center w-full">
+                                                        <label
+                                                            htmlFor="backId"
+                                                            className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
+                                                        >
+                                                            <svg
+                                                                className="w-10 h-10 mb-3 text-gray-400"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                                />
+                                                            </svg>
+                                                            <p className="text-sm text-gray-500">Click to upload back ID</p>
+                                                            <Input
+                                                                id="backId"
+                                                                type="file"
+                                                                name="backId"
+                                                                accept="image/*"
+                                                                onChange={handleFileChange}
+                                                                className="hidden"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {formData.backId && (
+                                                <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                    <Image
+                                                        width={400}
+                                                        height={300}
+                                                        src={URL.createObjectURL(formData.backId)}
+                                                        alt="Back ID Preview"
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleFileRemove("backId")}
+                                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : (
+                            /* Capture Mode */
+                            <div className="grid gap-8 md:grid-cols-2">
+                                <Card className="border-dashed border-2 transition-colors">
+                                    <CardContent className="p-8 text-center">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label className="text-lg font-medium">
+                                                    Camera & Photo Capture *
+                                                </Label>
+                                                <p className="text-sm">
+                                                    Take photos of your ID. Make sure you have good lighting and the ID is clearly visible.
+                                                </p>
+                                            </div>
+
+                                            {/* Side Selection */}
+                                            <div className="flex justify-center gap-2">
+                                                <Button
+                                                    variant={currentIdSide === "front" ? "default" : "outline"}
+                                                    onClick={() => setCurrentIdSide("front")}
+                                                    size="sm"
+                                                >
+                                                    Front of ID
+                                                </Button>
+                                                <Button
+                                                    variant={currentIdSide === "back" ? "default" : "outline"}
+                                                    onClick={() => setCurrentIdSide("back")}
+                                                    size="sm"
+                                                >
+                                                    Back of ID
+                                                </Button>
+                                            </div>
+
+                                            {/* Camera View */}
+                                            <div className="relative flex justify-center">
+                                                <div className="relative">
+                                                    <video
+                                                        ref={videoRef}
+                                                        autoPlay
+                                                        className={`w-80 h-60 border-2 rounded-lg ${cameraActive ? "border-green-500" : "border-gray-300"
+                                                            } bg-gray-100`}
+                                                    />
+                                                    {!cameraActive && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                                                            <div className="text-center">
+                                                                <Camera className="mx-auto h-24 w-24 text-gray-400 mb-2" />
+                                                                <p className="text-gray-500">Camera inactive</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-3 justify-center">
+                                                {!cameraActive ? (
+                                                    <Button onClick={startCamera} size="lg">
+                                                        <Camera className="w-4 h-4 mr-2" />
+                                                        Start Camera
+                                                    </Button>
+                                                ) : (
+                                                    <>
+                                                        <Button onClick={captureIdPhoto} size="lg">
+                                                            <Camera className="w-4 h-4 mr-2" />
+                                                            Capture {currentIdSide === "front" ? "Front" : "Back"}
+                                                        </Button>
+                                                        <Button variant="outline" onClick={stopCamera} size="lg">
+                                                            Stop Camera
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <canvas ref={canvasRef} width={400} height={300} className="hidden" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-dashed border-2 transition-colors">
+                                    <CardContent className="p-8 text-center">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label className="text-lg font-medium">
+                                                    Captured Photos *
+                                                </Label>
+                                                <p className="text-sm">
+                                                    Your captured ID photos will appear here.
+                                                </p>
+                                            </div>
+
+                                            <div className="grid gap-4">
+                                                {/* Front ID Captured */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-medium text-gray-600">Front of ID</Label>
+                                                    {formData.frontIdCaptured ? (
+                                                        <div className="relative w-full h-48 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                            <Image
+                                                                width={600}
+                                                                height={400}
+                                                                src={formData.frontIdCaptured}
+                                                                alt="Front ID Captured"
+                                                                className="w-full h-full object-contain"
+                                                            />
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="absolute top-2 left-2 bg-green-100 text-green-800"
+                                                            >
+                                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                                Captured
+                                                            </Badge>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg">
+                                                            <p className="text-gray-500 text-sm">Not captured yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Back ID Captured */}
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-medium text-gray-600">Back of ID</Label>
+                                                    {formData.backIdCaptured ? (
+                                                        <div className="relative w-full h-48 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                            <Image
+                                                                width={600}
+                                                                height={400}
+                                                                src={formData.backIdCaptured}
+                                                                alt="Back ID Captured"
+                                                                className="w-full h-full object-contain"
+                                                            />
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="absolute top-2 left-2 bg-green-100 text-green-800"
+                                                            >
+                                                                <CheckCircle className="w-3 h-3 mr-1" />
+                                                                Captured
+                                                            </Badge>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg">
+                                                            <p className="text-gray-500 text-sm">Not captured yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
                     </div>
                 )
 
@@ -525,25 +722,27 @@ export default function IdentityVerificationForm() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid gap-4 md:grid-cols-3">
-                                    {formData.frontId && (
+                                    {/* Front ID - Upload or Capture */}
+                                    {(formData.frontId || formData.frontIdCaptured) && (
                                         <div className="text-center">
                                             <Label className="text-sm font-medium text-gray-600">Front ID</Label>
                                             <Image
                                                 width={100}
                                                 height={100}
-                                                src={URL.createObjectURL(formData.frontId)}
+                                                src={formData.frontId ? URL.createObjectURL(formData.frontId) : formData.frontIdCaptured}
                                                 alt="Front ID"
                                                 className="w-full h-full object-cover border rounded-lg mt-1"
                                             />
                                         </div>
                                     )}
-                                    {formData.backId && (
+                                    {/* Back ID - Upload or Capture */}
+                                    {(formData.backId || formData.backIdCaptured) && (
                                         <div className="text-center">
                                             <Label className="text-sm font-medium text-gray-600">Back ID</Label>
                                             <Image
                                                 width={100}
                                                 height={100}
-                                                src={URL.createObjectURL(formData.backId)}
+                                                src={formData.backId ? URL.createObjectURL(formData.backId) : formData.backIdCaptured}
                                                 alt="Back ID"
                                                 className="w-full h-full object-cover border rounded-lg mt-1"
                                             />
