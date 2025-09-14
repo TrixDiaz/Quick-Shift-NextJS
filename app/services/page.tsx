@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, Upload, Camera, User, Eye, X } from "lucide-react"
+import { CheckCircle, Upload, Camera, User, Eye, X, Loader2, AlertCircle } from "lucide-react"
 import Image from "next/image"
+import { toast } from "sonner"
 
 const steps = [
     {
@@ -67,6 +68,8 @@ export default function IdentityVerificationForm() {
     const [ cameraActive, setCameraActive ] = useState(false)
     const [ idCaptureMode, setIdCaptureMode ] = useState<"upload" | "capture">("upload")
     const [ currentIdSide, setCurrentIdSide ] = useState<"front" | "back">("front")
+    const [ uploadingFrontId, setUploadingFrontId ] = useState(false)
+    const [ uploadingBackId, setUploadingBackId ] = useState(false)
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -87,10 +90,95 @@ export default function IdentityVerificationForm() {
         setFormData({ ...formData, state: value })
     }
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files) return
+    const validateFile = (file: File): string | null => {
+        // Check file type - more strict validation
+        const allowedTypes = [ 'image/png', 'image/jpeg', 'image/jpg' ]
+        const allowedExtensions = [ '.png', '.jpg', '.jpeg' ]
+
+        // Check MIME type
+        if (!allowedTypes.includes(file.type)) {
+            return "Please upload only PNG, JPG, or JPEG files."
+        }
+
+        // Check file extension as additional validation
+        const fileName = file.name.toLowerCase()
+        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext))
+        if (!hasValidExtension) {
+            return "Please upload only PNG, JPG, or JPEG files."
+        }
+
+        // Additional validation: Check if file is actually an image
+        if (!file.type.startsWith('image/')) {
+            return "Please upload only image files (PNG, JPG, JPEG)."
+        }
+
+        // Check file size (3MB = 3 * 1024 * 1024 bytes)
+        const maxSize = 3 * 1024 * 1024
+        if (file.size > maxSize) {
+            return "File size must be less than 3MB."
+        }
+
+        // Check minimum file size (files that are too small might be corrupted)
+        const minSize = 1024 // 1KB minimum
+        if (file.size < minSize) {
+            return "File appears to be corrupted or too small."
+        }
+
+        return null
+    }
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return
         const { name, files } = e.target
-        setFormData({ ...formData, [ name ]: files[ 0 ] })
+        const file = files[ 0 ]
+
+        // Clear any previous errors (now handled by toast)
+
+        // Immediate validation - check file size first (fastest check)
+        const maxSize = 3 * 1024 * 1024 // 3MB
+        if (file.size > maxSize) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
+            toast.error(`File size (${fileSizeMB}MB) exceeds the 3MB limit. Please choose a smaller file.`)
+            e.target.value = "" // Clear the input
+            return
+        }
+
+        // Validate file type and extension
+        const validationError = validateFile(file)
+        if (validationError) {
+            toast.error(validationError)
+            e.target.value = "" // Clear the input
+            return
+        }
+
+        // Only proceed if validation passes
+        console.log(`Valid file selected: ${file.name} (${file.size} bytes, ${file.type})`)
+
+        // Set loading state based on which file is being uploaded
+        if (name === "frontId") {
+            setUploadingFrontId(true)
+        } else if (name === "backId") {
+            setUploadingBackId(true)
+        }
+
+        // Simulate file upload process
+        try {
+            // Simulate upload delay
+            await new Promise(resolve => setTimeout(resolve, 2000))
+
+            setFormData({ ...formData, [ name ]: file })
+            toast.success(`${name === "frontId" ? "Front ID" : "Back ID"} uploaded successfully!`)
+        } catch (error) {
+            console.error("Error uploading file:", error)
+            toast.error("Upload failed. Please try again.")
+        } finally {
+            // Clear loading state
+            if (name === "frontId") {
+                setUploadingFrontId(false)
+            } else if (name === "backId") {
+                setUploadingBackId(false)
+            }
+        }
     }
 
     const handleFileRemove = (fieldName: string) => {
@@ -108,9 +196,11 @@ export default function IdentityVerificationForm() {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true })
                 videoRef.current.srcObject = stream
                 setCameraActive(true)
+                toast.success("Camera started successfully!")
             }
         } catch (error) {
             console.error("Error accessing camera:", error)
+            toast.error("Failed to access camera. Please check permissions.")
         }
     }
 
@@ -119,6 +209,7 @@ export default function IdentityVerificationForm() {
             const stream = videoRef.current.srcObject as MediaStream
             stream.getTracks().forEach(track => track.stop())
             setCameraActive(false)
+            toast.info("Camera stopped")
         }
     }
 
@@ -130,6 +221,7 @@ export default function IdentityVerificationForm() {
                 const imageData = canvasRef.current.toDataURL("image/png")
                 setFormData({ ...formData, selfie: imageData })
                 stopCamera()
+                toast.success("Selfie captured successfully!")
             }
         }
     }
@@ -142,8 +234,10 @@ export default function IdentityVerificationForm() {
                 const imageData = canvasRef.current.toDataURL("image/png")
                 if (currentIdSide === "front") {
                     setFormData({ ...formData, frontIdCaptured: imageData })
+                    toast.success("Front ID captured successfully!")
                 } else {
                     setFormData({ ...formData, backIdCaptured: imageData })
+                    toast.success("Back ID captured successfully!")
                 }
                 stopCamera()
             }
@@ -289,11 +383,14 @@ export default function IdentityVerificationForm() {
                                                     Front of ID *
                                                 </Label>
                                                 <p className="text-sm">
-                                                    Upload the front side of your government-issued ID
+                                                    Upload the front side of your Driver's License ID
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    Accepted formats: PNG, JPG, JPEG (max 3MB)
                                                 </p>
                                             </div>
                                             <div className="w-full">
-                                                {!formData.frontId && (
+                                                {!formData.frontId && !uploadingFrontId && (
                                                     <div className="flex flex-col items-center justify-center w-full">
                                                         <label
                                                             htmlFor="frontId"
@@ -317,11 +414,20 @@ export default function IdentityVerificationForm() {
                                                                 id="frontId"
                                                                 type="file"
                                                                 name="frontId"
-                                                                accept="image/*"
+                                                                accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
                                                                 onChange={handleFileChange}
                                                                 className="hidden"
+                                                                capture="environment"
                                                             />
                                                         </label>
+                                                    </div>
+                                                )}
+
+                                                {uploadingFrontId && (
+                                                    <div className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+                                                        <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
+                                                        <p className="text-sm text-blue-600 font-medium">Uploading front ID...</p>
+                                                        <p className="text-xs text-blue-500">Please wait</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -356,11 +462,14 @@ export default function IdentityVerificationForm() {
                                                     Back of ID *
                                                 </Label>
                                                 <p className="text-sm">
-                                                    Upload the back side of your government-issued ID
+                                                    Upload the back side of your Driver's License ID
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    Accepted formats: PNG, JPG, JPEG (max 3MB)
                                                 </p>
                                             </div>
                                             <div className="w-full">
-                                                {!formData.backId && (
+                                                {!formData.backId && !uploadingBackId && (
                                                     <div className="flex flex-col items-center justify-center w-full">
                                                         <label
                                                             htmlFor="backId"
@@ -384,11 +493,20 @@ export default function IdentityVerificationForm() {
                                                                 id="backId"
                                                                 type="file"
                                                                 name="backId"
-                                                                accept="image/*"
+                                                                accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
                                                                 onChange={handleFileChange}
                                                                 className="hidden"
+                                                                capture="environment"
                                                             />
                                                         </label>
+                                                    </div>
+                                                )}
+
+                                                {uploadingBackId && (
+                                                    <div className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+                                                        <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
+                                                        <p className="text-sm text-blue-600 font-medium">Uploading back ID...</p>
+                                                        <p className="text-xs text-blue-500">Please wait</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -729,7 +847,7 @@ export default function IdentityVerificationForm() {
                                             <Image
                                                 width={100}
                                                 height={100}
-                                                src={formData.frontId ? URL.createObjectURL(formData.frontId) : formData.frontIdCaptured}
+                                                src={formData.frontId ? URL.createObjectURL(formData.frontId) : (formData.frontIdCaptured || "")}
                                                 alt="Front ID"
                                                 className="w-full h-full object-cover border rounded-lg mt-1"
                                             />
@@ -742,7 +860,7 @@ export default function IdentityVerificationForm() {
                                             <Image
                                                 width={100}
                                                 height={100}
-                                                src={formData.backId ? URL.createObjectURL(formData.backId) : formData.backIdCaptured}
+                                                src={formData.backId ? URL.createObjectURL(formData.backId) : (formData.backIdCaptured || "")}
                                                 alt="Back ID"
                                                 className="w-full h-full object-cover border rounded-lg mt-1"
                                             />
@@ -767,7 +885,10 @@ export default function IdentityVerificationForm() {
                         <Button
                             className="w-full py-3 text-lg"
                             size="lg"
-                            onClick={() => alert("Form submitted successfully!")}
+                            onClick={() => {
+                                toast.success("Identity verification request submitted successfully!")
+                                // You can add actual form submission logic here
+                            }}
                         >
                             <CheckCircle className="w-5 h-5 mr-2" />
                             Submit Verification Request
