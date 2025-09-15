@@ -1,4 +1,7 @@
-import { Menu } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 interface MenuItem {
     title: string;
@@ -33,6 +36,16 @@ const Navbar = ({
         { title: "Contact", url: "contact", },
     ],
 }: NavbarProps) => {
+    const [ isMobileMenuOpen, setIsMobileMenuOpen ] = useState(false);
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false);
+    };
+
     return (
         <nav className="backdrop-blur shadow-sm sticky top-0 z-50 border-b">
             <div className="max-w-7xl mx-auto px-6">
@@ -57,10 +70,37 @@ const Navbar = ({
                     </ul>
 
                     {/* Mobile Menu Button */}
-                    <button className="md:hidden p-2 rounded-lg hover:bg-muted" aria-label="Toggle menu">
-                        <Menu className="h-6 w-6" />
+                    <button
+                        className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+                        aria-label="Toggle menu"
+                        onClick={toggleMobileMenu}
+                    >
+                        {isMobileMenuOpen ? (
+                            <X className="h-6 w-6" />
+                        ) : (
+                            <Menu className="h-6 w-6" />
+                        )}
                     </button>
                 </div>
+
+                {/* Mobile Menu */}
+                {isMobileMenuOpen && (
+                    <div className="md:hidden border-t bg-background/95 backdrop-blur">
+                        <ul className="py-4 space-y-2">
+                            {menu.map((item) => (
+                                <li key={item.title}>
+                                    <a
+                                        href={item.url}
+                                        className="block px-4 py-2 text-base font-medium hover:text-primary hover:bg-muted/50 transition-colors rounded-lg mx-2"
+                                        onClick={closeMobileMenu}
+                                    >
+                                        {item.title}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
         </nav>
     );
