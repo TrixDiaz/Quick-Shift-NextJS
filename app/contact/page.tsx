@@ -116,7 +116,7 @@ export default function ContactPage() {
                     {/* Right Side - Map */}
                     <div className="rounded-xl overflow-hidden shadow-lg h-[400px] lg:h-full">
                         <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d387190.2798854093!2d-74.2598736877829!3d40.69767006390443!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c24fa5d33f083b%3A0xa6f0b3f6e4f6d9e7!2sNew%20York%2C%20USA!5e0!3m2!1sen!2sph!4v1676379268942!5m2!1sen!2sph"
+                            src="https://www.google.com/maps?q=Austin,TX&output=embed"
                             width="100%"
                             height="100%"
                             style={{ border: 0 }}
