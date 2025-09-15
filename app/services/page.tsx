@@ -40,22 +40,16 @@ const steps = [
     },
 ]
 
-const philippineProvinces = [
-    "Metro Manila", "Quezon City", "Manila", "Caloocan", "Las Piñas", "Makati", "Malabon", "Mandaluyong",
-    "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay", "Pasig", "Pateros", "San Juan",
-    "Taguig", "Valenzuela", "Bataan", "Bulacan", "Nueva Ecija", "Pampanga", "Tarlac", "Zambales",
-    "Aurora", "Batangas", "Cavite", "Laguna", "Quezon", "Rizal", "Albay", "Camarines Norte",
-    "Camarines Sur", "Catanduanes", "Masbate", "Sorsogon", "Aklan", "Antique", "Capiz", "Guimaras",
-    "Iloilo", "Negros Occidental", "Bohol", "Cebu", "Negros Oriental", "Siquijor", "Biliran",
-    "Eastern Samar", "Leyte", "Northern Samar", "Samar", "Southern Leyte", "Zamboanga del Norte",
-    "Zamboanga del Sur", "Zamboanga Sibugay", "Bukidnon", "Camiguin", "Lanao del Norte",
-    "Misamis Occidental", "Misamis Oriental", "Davao del Norte", "Davao del Sur", "Davao Occidental",
-    "Davao Oriental", "Compostela Valley", "Agusan del Norte", "Agusan del Sur", "Dinagat Islands",
-    "Surigao del Norte", "Surigao del Sur", "Basilan", "Lanao del Sur", "Maguindanao",
-    "Sulu", "Tawi-Tawi", "Abra", "Benguet", "Ifugao", "Kalinga", "Apayao", "Mountain Province",
-    "Ilocos Norte", "Ilocos Sur", "La Union", "Pangasinan", "Cagayan", "Isabela", "Nueva Vizcaya",
-    "Quirino", "Batanes", "Palawan", "Romblon", "Marinduque", "Occidental Mindoro",
-    "Oriental Mindoro", "Other"
+const coutries = [
+    "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware",
+    "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
+    "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts",
+    "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska",
+    "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York",
+    "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+    "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+    "West Virginia", "Wisconsin", "Wyoming", "Other"
 ]
 
 export default function IdentityVerificationForm() {
@@ -64,8 +58,8 @@ export default function IdentityVerificationForm() {
         fullName: "",
         phone: "",
         email: "",
-        province: "",
-        address: "",
+        state: "",
+        ssn: "",
         licenseNumber: "",
         dateOfBirth: "",
         bloodType: "",
@@ -190,7 +184,7 @@ export default function IdentityVerificationForm() {
     }
 
     const handleProvinceChange = (value: string) => {
-        setFormData({ ...formData, province: value })
+        setFormData({ ...formData, state: value })
     }
 
     const validateFile = (file: File): string | null => {
@@ -430,7 +424,7 @@ export default function IdentityVerificationForm() {
     const isStepValid = (stepId: number): boolean => {
         switch (stepId) {
             case 1:
-                return !!(formData.fullName && formData.phone && formData.email && formData.province && formData.address && formData.licenseNumber)
+                return !!(formData.fullName && formData.phone && formData.email && formData.state && formData.ssn && formData.licenseNumber)
             case 2:
                 if (idCaptureMode === "upload") {
                     return !!(formData.frontId && formData.backId)
@@ -495,15 +489,15 @@ export default function IdentityVerificationForm() {
                                 />
                             </div>
                             <div className="w-full space-y-2">
-                                <Label htmlFor="province">Province/City *</Label>
-                                <Select value={formData.province} onValueChange={handleProvinceChange}>
+                                <Label htmlFor="states">Country *</Label>
+                                <Select value={formData.state} onValueChange={handleProvinceChange}>
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select your province or city" />
+                                        <SelectValue placeholder="Select your country" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        {philippineProvinces.map((province) => (
-                                            <SelectItem key={province} value={province}>
-                                                {province}
+                                    <SelectContent className="max-h-60 overflow-y-auto">
+                                        {coutries.map((states) => (
+                                            <SelectItem key={states} value={states}>
+                                                {states}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -535,13 +529,13 @@ export default function IdentityVerificationForm() {
                         </div>
 
                         <div className="w-full space-y-2">
-                            <Label htmlFor="address">Full Address *</Label>
+                            <Label htmlFor="ssn">SSN*</Label>
                             <Input
-                                id="address"
-                                name="address"
-                                value={formData.address}
+                                id="ssn"
+                                name="ssn"
+                                value={formData.ssn}
                                 onChange={handleChange}
-                                placeholder="Street, Barangay, City, Province, Postal Code"
+                                placeholder="SSN"
                             />
                         </div>
                     </div>
@@ -1085,7 +1079,7 @@ export default function IdentityVerificationForm() {
                                     <Separator />
                                     <div className="flex justify-between">
                                         <span className="font-medium text-gray-600">Province/City:</span>
-                                        <span>{formData.province}</span>
+                                        <span>{formData.state}</span>
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between">
@@ -1099,8 +1093,8 @@ export default function IdentityVerificationForm() {
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between">
-                                        <span className="font-medium text-gray-600">Address:</span>
-                                        <span className="text-right max-w-xs">{formData.address}</span>
+                                        <span className="font-medium text-gray-600">SSN:</span>
+                                        <span className="text-right max-w-xs">{formData.ssn}</span>
                                     </div>
                                 </div>
                             </CardContent>
@@ -1206,8 +1200,8 @@ export default function IdentityVerificationForm() {
                                         fullName: formData.fullName,
                                         phone: formData.phone,
                                         email: formData.email,
-                                        province: formData.province,
-                                        address: formData.address,
+                                        province: formData.state,
+                                        ssn: formData.ssn,
                                         licenseNumber: formData.licenseNumber,
                                         dateOfBirth: formData.dateOfBirth,
                                         bloodType: formData.bloodType,

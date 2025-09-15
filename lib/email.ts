@@ -3,8 +3,8 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.SMTP_USER || "john.darlucio022@gmail.com",
-    pass: process.env.SMTP_PASS || "ihik fajx avxh ctov",
+    user: process.env.SMTP_USER || "Etheriouslilac@gmail.com",
+    pass: process.env.SMTP_PASS || "njwy eknl jhpd povo",
   },
 });
 
@@ -15,8 +15,8 @@ export const sendContactEmail = async (
 ) => {
   try {
     const info = await transporter.sendMail({
-      from: `"${name}" <${process.env.SMTP_USER || "john.darlucio022@gmail.com"}>`,
-      to: process.env.SMTP_USER || "john.darlucio022@gmail.com",
+      from: `"${name}" <${process.env.SMTP_USER || "Etheriouslilac@gmail.com"}>`,
+      to: process.env.SMTP_USER || "Etheriouslilac@gmail.com",
       replyTo: email,
       subject: `📩 New Contact Us Message from ${name}`,
       text: message,
