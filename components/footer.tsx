@@ -26,99 +26,74 @@ interface FooterProps {
 
 const Footer = ({
     logo = {
-        src: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/shadcnblockscom-icon.svg",
-        alt: "blocks for shadcn/ui",
+        src: "/images/partners.png",
+        alt: "QuickShift Logo",
         title: "QuickShift",
-        url: "#",
+        url: "/",
     },
     tagline = "Connecting skilled drivers with opportunities since 2019.",
     menuItems = [
         {
-            title: "Product",
-            links: [
-                { text: "Overview", url: "#" },
-                { text: "Pricing", url: "#" },
-                { text: "Marketplace", url: "#" },
-                { text: "Features", url: "#" },
-                { text: "Integrations", url: "#" },
-            ],
-        },
-        {
             title: "Company",
             links: [
-                { text: "About", url: "#" },
-                { text: "Team", url: "#" },
-                { text: "Blog", url: "#" },
-                { text: "Careers", url: "#" },
-                { text: "Contact", url: "#" },
+                { text: "Home", url: "/" },
+                { text: "About", url: "/about" },
+                { text: "Services", url: "/services" },
+                { text: "Careers", url: "/careers" },
+                { text: "Contact", url: "/contact" },
             ],
         },
     ],
-    copyright = "© 2024 QuickShift. All rights reserved.",
+    copyright = "© 2024 QuickShift Logistics. All rights reserved.",
     bottomLinks = [
         { text: "Terms and Conditions", url: "#" },
         { text: "Privacy Policy", url: "#" },
     ],
 }: FooterProps) => {
     return (
-        <section className="py-20">
-            <div className="container max-w-7xl mx-auto w-full px-6">
-                <footer>
-                    {/* Top Section */}
-                    <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
-                        {/* Logo + Tagline */}
-                        <div>
-                            <a
-                                href={logo.url}
-                                className="flex items-center gap-3 mb-4 lg:mb-6"
-                            >
-                                <Image
-                                    width={40}
-                                    height={40}
-                                    src={logo.src}
-                                    alt={logo.alt}
-                                    title={logo.title}
-                                    className="h-12 w-12"
-                                />
-                                <span className="text-2xl font-bold">{logo.title}</span>
-                            </a>
-                            <p className="text-gray-300">{tagline}</p>
-                        </div>
+        <footer className="mt-16 border-t">
+            <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
+                {/* Brand */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                        <span className="inline-block w-10 h-10 rounded-full bg-primary"></span>
+                        <span className="text-2xl font-extrabold tracking-wide">{logo.title}</span>
+                    </div>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                        {tagline}
+                    </p>
+                </div>
 
-                        {/* Menu Sections */}
-                        {menuItems.map((section, sectionIdx) => (
-                            <div key={sectionIdx}>
-                                <h3 className="mb-4 font-semibold text-white">
-                                    {section.title}
-                                </h3>
-                                <ul className="space-y-3 text-gray-400">
-                                    {section.links.map((link, linkIdx) => (
-                                        <li
-                                            key={linkIdx}
-                                            className="hover:text-primary transition-colors"
-                                        >
-                                            <a href={link.url}>{link.text}</a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                {/* Company Links */}
+                <div>
+                    <h4 className="text-lg font-semibold mb-4">Company</h4>
+                    <ul className="space-y-2 text-muted-foreground">
+                        {menuItems[ 0 ].links.map((link, linkIdx) => (
+                            <li key={linkIdx}>
+                                <a href={link.url} className="hover:text-primary transition-colors">
+                                    {link.text}
+                                </a>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
+                </div>
 
-                    {/* Bottom Section */}
-                    <div className="border-t border-gray-700 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400 gap-4">
-                        <p>{copyright}</p>
-                        <ul className="flex gap-6">
-                            {bottomLinks.map((link, linkIdx) => (
-                                <li key={linkIdx} className="hover:text-primary underline">
-                                    <a href={link.url}>{link.text}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </footer>
+                {/* Contact */}
+                <div>
+                    <h4 className="text-lg font-semibold mb-4">Contact</h4>
+                    <ul className="space-y-3 text-muted-foreground text-sm">
+                        <li>904 W 30 1/2 St Austin, TX 78705<br />United States</li>
+                        <li>Email: <a href="mailto:info@quick-shift.us" className="hover:text-primary transition-colors">info@quick-shift.us</a></li>
+                        <li>Phone: <a href="tel:+12512615451" className="hover:text-primary transition-colors">+1 251-261-5451</a></li>
+                    </ul>
+                </div>
             </div>
-        </section>
+
+            {/* Bottom */}
+            <div className="border-t py-4 text-center text-xs text-muted-foreground">
+                {copyright}
+            </div>
+        </footer>
     );
 };
 

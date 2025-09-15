@@ -46,8 +46,8 @@ interface NavbarProps {
 const Navbar = ({
     logo = {
         url: "/",
-        src: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/logos/shadcnblockscom-icon.svg",
-        alt: "logo",
+        src: "/images/partners.png",
+        alt: "QuickShift Logo",
         title: "QuickShift",
     },
     menu = [
@@ -58,83 +58,35 @@ const Navbar = ({
     ],
 }: NavbarProps) => {
     return (
-        <section className="py-4">
-            <div className="container max-w-7xl mx-auto w-full">
-                {/* Desktop Menu */}
-                <nav className="hidden justify-between lg:flex">
-                    <div className="flex items-center gap-6">
-                        {/* Logo */}
-                        <a href={logo.url} className="flex items-center gap-2">
-                            <Image
-                                width={32}
-                                height={32}
-                                src={logo.src}
-                                className="max-h-8 dark:invert"
-                                alt={logo.alt}
-                            />
-                            <span className="text-lg font-semibold tracking-tighter">
-                                {logo.title}
-                            </span>
-                        </a>
+        <nav className="backdrop-blur shadow-sm sticky top-0 z-50 border-b">
+            <div className="max-w-7xl mx-auto px-6">
+                <div className="flex justify-between items-center h-16">
+                    {/* Logo */}
+                    <a href={logo.url} className="flex items-center gap-2">
+                        <span className="inline-block w-8 h-8 rounded-2xl bg-primary"></span>
+                        <span className="text-2xl font-extrabold tracking-tight">
+                            {logo.title}
+                        </span>
+                    </a>
 
-                    </div>
-                    <div className="flex items-center">
-                        <NavigationMenu>
-                            <NavigationMenuList>
-                                {menu.map((item) => renderMenuItem(item))}
-                            </NavigationMenuList>
-                        </NavigationMenu>
-                    </div>
-                </nav>
+                    {/* Desktop Menu */}
+                    <ul className="hidden md:flex items-center gap-6 font-medium">
+                        {menu.map((item) => (
+                            <li key={item.title}>
+                                <a href={item.url} className="hover:text-primary transition-colors">
+                                    {item.title}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
 
-                {/* Mobile Menu */}
-                <div className="block lg:hidden">
-                    <div className="flex items-center justify-between">
-                        {/* Logo */}
-                        <a href={logo.url} className="flex items-center gap-2">
-                            <Image
-                                width={32}
-                                height={32}
-                                src={logo.src}
-                                className="max-h-8 dark:invert"
-                                alt={logo.alt}
-                            />
-                        </a>
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                    <Menu className="size-4" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent className="overflow-y-auto">
-                                <SheetHeader>
-                                    <SheetTitle>
-                                        <a href={logo.url} className="flex items-center gap-2">
-                                            <Image
-                                                width={32}
-                                                height={32}
-                                                src={logo.src}
-                                                className="max-h-8 dark:invert"
-                                                alt={logo.alt}
-                                            />
-                                        </a>
-                                    </SheetTitle>
-                                </SheetHeader>
-                                <div className="flex flex-col gap-6 p-4">
-                                    <Accordion
-                                        type="single"
-                                        collapsible
-                                        className="flex w-full flex-col gap-4"
-                                    >
-                                        {menu.map((item) => renderMobileMenuItem(item))}
-                                    </Accordion>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
+                    {/* Mobile Menu Button */}
+                    <button className="md:hidden p-2 rounded-lg hover:bg-muted" aria-label="Toggle menu">
+                        <Menu className="h-6 w-6" />
+                    </button>
                 </div>
             </div>
-        </section>
+        </nav>
     );
 };
 
