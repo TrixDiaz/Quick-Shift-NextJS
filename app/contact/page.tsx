@@ -28,11 +28,11 @@ export default function ContactPage() {
         setIsSubmitting(true)
 
         try {
-            // await axios.post('/api/contact', formData, {
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            // })
+            await axios.post('/api/contact', formData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
 
             toast.success('Message sent successfully!', {
                 description: 'We\'ll get back to you soon.',

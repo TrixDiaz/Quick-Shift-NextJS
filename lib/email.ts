@@ -1,28 +1,26 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.SMTP_USER || "john.darlucio022@gmail.com",
-        pass: process.env.SMTP_PASS || "ihik fajx avxh ctov",
-    },
+  service: "gmail",
+  auth: {
+    user: process.env.SMTP_USER || "john.darlucio022@gmail.com",
+    pass: process.env.SMTP_PASS || "ihik fajx avxh ctov",
+  },
 });
 
 export const sendContactEmail = async (
-    name: string,
-    email: string,
-    message: string
+  name: string,
+  email: string,
+  message: string
 ) => {
-    try {
-        const info = await transporter.sendMail({
-            from: `"${name}" <${process.env.SMTP_USER || "john.darlucio022@gmail.com"}>`,
-            to: process.env.SMTP_USER || "john.darlucio022@gmail.com",
-            replyTo: email,
-            subject: `📩 New Contact Us Message from ${name}`,
-            text: message,
-            html: `
+  try {
+    const info = await transporter.sendMail({
+      from: `"${name}" <${process.env.SMTP_USER || "john.darlucio022@gmail.com"}>`,
+      to: process.env.SMTP_USER || "john.darlucio022@gmail.com",
+      replyTo: email,
+      subject: `📩 New Contact Us Message from ${name}`,
+      text: message,
+      html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
           <div style="background: #1c402a; color: #fff; padding: 16px 24px; text-align: center;">
             <h2 style="margin: 0;">New Contact Request</h2>
@@ -51,12 +49,12 @@ export const sendContactEmail = async (
           </div>
         </div>
       `,
-        });
+    });
 
-        console.log("Message sent: %s", info.messageId);
-        return { success: true };
-    } catch (error) {
-        console.error("Error sending email", error);
-        return { success: false, error };
-    }
+    console.log("Message sent: %s", info.messageId);
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending email", error);
+    return { success: false, error };
+  }
 };

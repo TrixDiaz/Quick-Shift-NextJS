@@ -22,32 +22,40 @@ const steps = [
     },
     {
         id: 2,
-        title: "ID Upload",
-        description: "Upload front and back of your ID",
+        title: "Philippine Driver's License",
+        description: "Upload or capture front and back of your Philippine Driver's License",
         icon: Upload
     },
     {
         id: 3,
-        title: "Photo Verification",
-        description: "Take a selfie for verification and capture photo make sure you have good lighting and look directly at the camera",
+        title: "Live Photo Verification",
+        description: "Take a live selfie for face matching verification with your ID photo",
         icon: Camera
     },
     {
         id: 4,
         title: "Review & Submit",
-        description: "Review all information before submitting",
+        description: "Review all information and verification results before submitting",
         icon: Eye
     },
 ]
 
-const states = [
-    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware",
-    "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
-    "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi",
-    "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
-    "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania",
-    "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont",
-    "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming",
+const philippineProvinces = [
+    "Metro Manila", "Quezon City", "Manila", "Caloocan", "Las Piñas", "Makati", "Malabon", "Mandaluyong",
+    "Marikina", "Muntinlupa", "Navotas", "Parañaque", "Pasay", "Pasig", "Pateros", "San Juan",
+    "Taguig", "Valenzuela", "Bataan", "Bulacan", "Nueva Ecija", "Pampanga", "Tarlac", "Zambales",
+    "Aurora", "Batangas", "Cavite", "Laguna", "Quezon", "Rizal", "Albay", "Camarines Norte",
+    "Camarines Sur", "Catanduanes", "Masbate", "Sorsogon", "Aklan", "Antique", "Capiz", "Guimaras",
+    "Iloilo", "Negros Occidental", "Bohol", "Cebu", "Negros Oriental", "Siquijor", "Biliran",
+    "Eastern Samar", "Leyte", "Northern Samar", "Samar", "Southern Leyte", "Zamboanga del Norte",
+    "Zamboanga del Sur", "Zamboanga Sibugay", "Bukidnon", "Camiguin", "Lanao del Norte",
+    "Misamis Occidental", "Misamis Oriental", "Davao del Norte", "Davao del Sur", "Davao Occidental",
+    "Davao Oriental", "Compostela Valley", "Agusan del Norte", "Agusan del Sur", "Dinagat Islands",
+    "Surigao del Norte", "Surigao del Sur", "Basilan", "Lanao del Sur", "Maguindanao",
+    "Sulu", "Tawi-Tawi", "Abra", "Benguet", "Ifugao", "Kalinga", "Apayao", "Mountain Province",
+    "Ilocos Norte", "Ilocos Sur", "La Union", "Pangasinan", "Cagayan", "Isabela", "Nueva Vizcaya",
+    "Quirino", "Batanes", "Palawan", "Romblon", "Marinduque", "Occidental Mindoro",
+    "Oriental Mindoro", "Other"
 ]
 
 export default function IdentityVerificationForm() {
@@ -56,9 +64,11 @@ export default function IdentityVerificationForm() {
         fullName: "",
         phone: "",
         email: "",
-        state: "",
+        province: "",
         address: "",
-        ssn: "",
+        licenseNumber: "",
+        dateOfBirth: "",
+        bloodType: "",
         frontId: null as File | null,
         backId: null as File | null,
         frontIdCaptured: "" as string,
@@ -70,11 +80,104 @@ export default function IdentityVerificationForm() {
     const [ currentIdSide, setCurrentIdSide ] = useState<"front" | "back">("front")
     const [ uploadingFrontId, setUploadingFrontId ] = useState(false)
     const [ uploadingBackId, setUploadingBackId ] = useState(false)
+    const [ faceMatching, setFaceMatching ] = useState(false)
+    const [ matchResult, setMatchResult ] = useState<{
+        overallScore: number;
+        matchPercentage: number;
+        isMatch: boolean;
+        method: string;
+    } | null>(null)
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
 
+    const compareImages = async (image1Base64: string, image2Base64: string) => {
+        try {
+            setFaceMatching(true)
+            setMatchResult(null)
+
+            // Validate base64 strings
+            if (!image1Base64 || !image2Base64) {
+                throw new Error('Invalid image data')
+            }
+
+            // Show loading toast
+            toast.loading("Verifying face match...", { id: "face-matching" })
+
+            const response = await fetch('http://localhost:5000/api/compare-faces', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id_image: image1Base64,
+                    live_image: image2Base64
+                })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || `API Error: ${response.status}`)
+            }
+
+            const result = await response.json()
+
+            if (!result.success) {
+                throw new Error(result.error || 'Face matching failed')
+            }
+
+            const matchPercentage = Math.round(result.match_percentage)
+            const isMatch = result.is_match && matchPercentage >= 60
+
+            const matchData = {
+                overallScore: result.match_percentage / 100,
+                matchPercentage,
+                isMatch,
+                method: result.method || "face_recognition"
+            }
+
+            setMatchResult(matchData)
+
+            // Dismiss loading toast and show result
+            toast.dismiss("face-matching")
+
+            if (isMatch) {
+                toast.success(`Face match verified! ${matchPercentage}% similarity`, {
+                    description: "You can now proceed to the next step."
+                })
+            } else {
+                toast.error(`Face match failed! Only ${matchPercentage}% similarity.`, {
+                    description: `Please ensure good lighting and look directly at the camera. Minimum required: 60%. Try taking another photo.`
+                })
+            }
+
+            return matchData
+        } catch (error) {
+            console.error('Error comparing images:', error)
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+            // Dismiss loading toast and show error
+            toast.dismiss("face-matching")
+            toast.error(`Failed to verify face match: ${errorMessage}`, {
+                description: "Please check your internet connection and try again."
+            })
+
+            setMatchResult(null)
+            return null
+        } finally {
+            setFaceMatching(false)
+        }
+    }
+
     const nextStep = () => {
+        // Additional validation for step 3 (face verification)
+        if (currentStep === 3) {
+            if (!matchResult || !matchResult.isMatch) {
+                toast.error("Face verification is required before proceeding. Please ensure your face matches your ID photo.")
+                return
+            }
+        }
+
         if (currentStep < steps.length) setCurrentStep(currentStep + 1)
     }
 
@@ -86,8 +189,8 @@ export default function IdentityVerificationForm() {
         setFormData({ ...formData, [ e.target.name ]: e.target.value })
     }
 
-    const handleStateChange = (value: string) => {
-        setFormData({ ...formData, state: value })
+    const handleProvinceChange = (value: string) => {
+        setFormData({ ...formData, province: value })
     }
 
     const validateFile = (file: File): string | null => {
@@ -196,6 +299,8 @@ export default function IdentityVerificationForm() {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true })
                 videoRef.current.srcObject = stream
                 setCameraActive(true)
+                // Reset match result when starting camera for retry
+                setMatchResult(null)
                 toast.success("Camera started successfully!")
             }
         } catch (error) {
@@ -213,15 +318,93 @@ export default function IdentityVerificationForm() {
         }
     }
 
-    const capturePhoto = () => {
+    const resetFaceMatching = () => {
+        setMatchResult(null)
+        setFormData({ ...formData, selfie: "" })
+    }
+
+    const enhanceImageQuality = (imageData: string): Promise<string> => {
+        return new Promise<string>((resolve) => {
+            const img = document.createElement('img')
+            img.onload = () => {
+                const canvas = document.createElement('canvas')
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                    // Set canvas size to a standard size for better processing
+                    const targetSize = 400
+                    canvas.width = targetSize
+                    canvas.height = targetSize
+
+                    // Draw the image scaled to target size
+                    ctx.drawImage(img, 0, 0, targetSize, targetSize)
+
+                    // Get image data
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                    const data = imageData.data
+
+                    // Convert to grayscale with enhanced processing
+                    for (let i = 0; i < data.length; i += 4) {
+                        // Use luminance formula for better grayscale conversion
+                        const gray = data[ i ] * 0.299 + data[ i + 1 ] * 0.587 + data[ i + 2 ] * 0.114
+
+                        // Apply slight contrast enhancement
+                        const enhanced = Math.min(255, Math.max(0, (gray - 128) * 1.1 + 128))
+
+                        data[ i ] = enhanced     // Red
+                        data[ i + 1 ] = enhanced // Green
+                        data[ i + 2 ] = enhanced // Blue
+                        // Alpha channel (data[i + 3]) remains unchanged
+                    }
+
+                    // Put the modified data back
+                    ctx.putImageData(imageData, 0, 0)
+
+                    // Convert back to data URL with high quality
+                    const enhancedDataUrl = canvas.toDataURL('image/png', 0.95)
+                    resolve(enhancedDataUrl)
+                } else {
+                    resolve(imageData) // Fallback to original if canvas context fails
+                }
+            }
+            img.src = imageData
+        })
+    }
+
+    const capturePhoto = async () => {
         if (videoRef.current && canvasRef.current) {
             const ctx = canvasRef.current.getContext("2d")
             if (ctx) {
                 ctx.drawImage(videoRef.current, 0, 0, 320, 240)
                 const imageData = canvasRef.current.toDataURL("image/png")
-                setFormData({ ...formData, selfie: imageData })
+
+                // Enhance captured photo quality for better matching with ID photos
+                const enhancedImageData = await enhanceImageQuality(imageData)
+
+                setFormData({ ...formData, selfie: enhancedImageData })
                 stopCamera()
-                toast.success("Selfie captured successfully!")
+                toast.success("Selfie captured and processed for face matching!")
+
+                // Reset previous match result when taking a new photo
+                setMatchResult(null)
+
+                // Trigger face matching if front ID is available
+                const frontIdImage = idCaptureMode === "upload" ? formData.frontId : formData.frontIdCaptured
+                if (frontIdImage) {
+                    if (idCaptureMode === "upload" && formData.frontId) {
+                        // Convert uploaded file to base64
+                        const reader = new FileReader()
+                        reader.onload = async () => {
+                            const base64String = reader.result as string
+                            await compareImages(base64String, enhancedImageData)
+                        }
+                        reader.readAsDataURL(formData.frontId)
+                    } else if (idCaptureMode === "capture" && formData.frontIdCaptured) {
+                        // Use captured front ID image
+                        await compareImages(formData.frontIdCaptured, enhancedImageData)
+                    }
+                } else {
+                    toast.warning("Please upload or capture your front ID first for face verification")
+                }
             }
         }
     }
@@ -244,20 +427,22 @@ export default function IdentityVerificationForm() {
         }
     }
 
-    const isStepValid = (stepId: number) => {
+    const isStepValid = (stepId: number): boolean => {
         switch (stepId) {
             case 1:
-                return formData.fullName && formData.phone && formData.email && formData.state && formData.address && formData.ssn
+                return !!(formData.fullName && formData.phone && formData.email && formData.province && formData.address && formData.licenseNumber)
             case 2:
                 if (idCaptureMode === "upload") {
-                    return formData.frontId && formData.backId
+                    return !!(formData.frontId && formData.backId)
                 } else {
-                    return formData.frontIdCaptured && formData.backIdCaptured
+                    return !!(formData.frontIdCaptured && formData.backIdCaptured)
                 }
             case 3:
-                return formData.selfie
+                // Step 3 requires both selfie and successful face match
+                return !!(formData.selfie && matchResult && matchResult.isMatch && matchResult.matchPercentage >= 60)
             case 4:
-                return true
+                // Step 4 requires all previous steps to be valid, including face match
+                return isStepValid(1) && isStepValid(2) && isStepValid(3)
             default:
                 return false
         }
@@ -268,15 +453,20 @@ export default function IdentityVerificationForm() {
             case 1:
                 return (
                     <div className="grid gap-6">
+                        <div className="text-center mb-6">
+                            <h3 className="text-lg font-semibold text-blue-600 mb-2">Philippine Driver&apos;s License Information</h3>
+                            <p className="text-sm text-gray-600">Please enter your personal details as they appear on your driver&apos;s license</p>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="w-full space-y-2">
-                                <Label htmlFor="fullName">Full Name *</Label>
+                                <Label htmlFor="fullName">Full Name (as on license) *</Label>
                                 <Input
                                     id="fullName"
                                     name="fullName"
                                     value={formData.fullName}
                                     onChange={handleChange}
-                                    placeholder="Enter your full name"
+                                    placeholder="Enter your full name as shown on license"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -287,7 +477,7 @@ export default function IdentityVerificationForm() {
                                     type="tel"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    placeholder="(555) 123-4567"
+                                    placeholder="+63 912 345 6789"
                                 />
                             </div>
                         </div>
@@ -305,19 +495,42 @@ export default function IdentityVerificationForm() {
                                 />
                             </div>
                             <div className="w-full space-y-2">
-                                <Label htmlFor="state">State *</Label>
-                                <Select value={formData.state} onValueChange={handleStateChange}>
+                                <Label htmlFor="province">Province/City *</Label>
+                                <Select value={formData.province} onValueChange={handleProvinceChange}>
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select your state" />
+                                        <SelectValue placeholder="Select your province or city" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {states.map((state) => (
-                                            <SelectItem key={state} value={state}>
-                                                {state}
+                                        {philippineProvinces.map((province) => (
+                                            <SelectItem key={province} value={province}>
+                                                {province}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="w-full space-y-2">
+                                <Label htmlFor="licenseNumber">License Number *</Label>
+                                <Input
+                                    id="licenseNumber"
+                                    name="licenseNumber"
+                                    value={formData.licenseNumber}
+                                    onChange={handleChange}
+                                    placeholder="e.g., N02-23-030042"
+                                />
+                            </div>
+                            <div className="w-full space-y-2">
+                                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                                <Input
+                                    id="dateOfBirth"
+                                    name="dateOfBirth"
+                                    type="date"
+                                    value={formData.dateOfBirth}
+                                    onChange={handleChange}
+                                />
                             </div>
                         </div>
 
@@ -328,20 +541,7 @@ export default function IdentityVerificationForm() {
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
-                                placeholder="1234 Main St, City, State 12345"
-                            />
-                        </div>
-
-                        <div className="w-full space-y-2">
-                            <Label htmlFor="ssn">Social Security Number *</Label>
-                            <Input
-                                id="ssn"
-                                type="password"
-                                name="ssn"
-                                value={formData.ssn}
-                                onChange={handleChange}
-                                placeholder="XXX-XX-XXXX"
-                                maxLength={11}
+                                placeholder="Street, Barangay, City, Province, Postal Code"
                             />
                         </div>
                     </div>
@@ -380,10 +580,10 @@ export default function IdentityVerificationForm() {
                                         <div className="space-y-6">
                                             <div className="space-y-2">
                                                 <Label htmlFor="frontId" className="text-lg font-medium">
-                                                    Front of ID *
+                                                    Front of Philippine Driver&apos;s License *
                                                 </Label>
                                                 <p className="text-sm">
-                                                    Upload the front side of your Driver's License ID
+                                                    Upload the front side of your Philippine Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
                                                 </p>
                                                 <p className="text-xs text-gray-500">
                                                     Accepted formats: PNG, JPG, JPEG (max 3MB)
@@ -459,10 +659,10 @@ export default function IdentityVerificationForm() {
                                         <div className="space-y-6">
                                             <div className="space-y-2">
                                                 <Label htmlFor="backId" className="text-lg font-medium">
-                                                    Back of ID *
+                                                    Back of Philippine Driver&apos;s License *
                                                 </Label>
                                                 <p className="text-sm">
-                                                    Upload the back side of your Driver's License ID
+                                                    Upload the back side of your Philippine Driver&apos;s License. Make sure all text and barcodes are clearly visible.
                                                 </p>
                                                 <p className="text-xs text-gray-500">
                                                     Accepted formats: PNG, JPG, JPEG (max 3MB)
@@ -697,8 +897,18 @@ export default function IdentityVerificationForm() {
                                                 Camera & Photo Capture *
                                             </Label>
                                             <p className="text-sm">
-                                                Take a selfie for verification. Make sure you have good lighting and look directly at the camera.
+                                                Take a live selfie for face verification. Make sure you have good lighting, look directly at the camera, and remove any glasses or hats. Your photo will be compared with the face on your Philippine Driver&apos;s License using advanced face recognition technology.
                                             </p>
+                                            <div className="bg-blue-50 p-3 rounded-lg">
+                                                <p className="text-xs text-blue-800">
+                                                    <strong>Tips for best results:</strong><br />
+                                                    • Ensure good, even lighting<br />
+                                                    • Look directly at the camera<br />
+                                                    • Remove glasses, hats, or face coverings<br />
+                                                    • Keep a neutral expression<br />
+                                                    • Make sure your face fills the frame
+                                                </p>
+                                            </div>
                                         </div>
 
                                         {/* Camera View */}
@@ -769,13 +979,70 @@ export default function IdentityVerificationForm() {
                                                         className="w-full h-full object-cover"
                                                     />
                                                 </div>
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="w-full flex items-center justify-center gap-1 bg-green-100 text-green-800 py-2 rounded-md"
-                                                >
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    Photo captured successfully
-                                                </Badge>
+
+                                                {/* Face Matching Results */}
+                                                {faceMatching && (
+                                                    <div className="w-full flex items-center justify-center gap-2 bg-blue-100 text-blue-800 py-2 rounded-md">
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        <span>Verifying face match...</span>
+                                                    </div>
+                                                )}
+
+                                                {matchResult && !faceMatching && (
+                                                    <div className="w-full space-y-2">
+                                                        <Badge
+                                                            variant={matchResult.isMatch ? "default" : "destructive"}
+                                                            className={`w-full flex items-center justify-center gap-1 py-2 rounded-md ${matchResult.isMatch
+                                                                ? "bg-green-100 text-green-800 border-green-200"
+                                                                : "bg-red-100 text-red-800 border-red-200"
+                                                                }`}
+                                                        >
+                                                            {matchResult.isMatch ? (
+                                                                <CheckCircle className="w-4 h-4" />
+                                                            ) : (
+                                                                <AlertCircle className="w-4 h-4" />
+                                                            )}
+                                                            {matchResult.isMatch ? "Face Match Verified!" : "Face Match Failed"}
+                                                        </Badge>
+
+                                                        <div className="text-center">
+                                                            <div className="text-2xl font-bold text-gray-800">
+                                                                {matchResult.matchPercentage}%
+                                                            </div>
+                                                            <div className="text-sm text-gray-600">
+                                                                Similarity Score
+                                                            </div>
+                                                            <div className="text-xs text-gray-500 mt-1">
+                                                                Minimum required: 60%
+                                                            </div>
+                                                        </div>
+
+                                                        {!matchResult.isMatch && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    resetFaceMatching()
+                                                                    startCamera()
+                                                                }}
+                                                                className="w-full mt-2"
+                                                            >
+                                                                <Camera className="w-4 h-4 mr-2" />
+                                                                Retry Photo
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {!matchResult && !faceMatching && (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="w-full flex items-center justify-center gap-1 bg-green-100 text-green-800 py-2 rounded-md"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        Photo captured successfully
+                                                    </Badge>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg">
@@ -817,18 +1084,23 @@ export default function IdentityVerificationForm() {
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between">
-                                        <span className="font-medium text-gray-600">State:</span>
-                                        <span>{formData.state}</span>
+                                        <span className="font-medium text-gray-600">Province/City:</span>
+                                        <span>{formData.province}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between">
+                                        <span className="font-medium text-gray-600">License Number:</span>
+                                        <span>{formData.licenseNumber}</span>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between">
+                                        <span className="font-medium text-gray-600">Date of Birth:</span>
+                                        <span>{formData.dateOfBirth}</span>
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between">
                                         <span className="font-medium text-gray-600">Address:</span>
                                         <span className="text-right max-w-xs">{formData.address}</span>
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between">
-                                        <span className="font-medium text-gray-600">SSN:</span>
-                                        <span>***-**-{formData.ssn.slice(-4)}</span>
                                     </div>
                                 </div>
                             </CardContent>
@@ -869,13 +1141,26 @@ export default function IdentityVerificationForm() {
                                     {formData.selfie && (
                                         <div className="text-center">
                                             <Label className="text-sm font-medium text-gray-600">Verification Photo</Label>
-                                            <Image
-                                                width={100}
-                                                height={100}
-                                                src={formData.selfie}
-                                                alt="Selfie"
-                                                className="w-full h-full object-cover border rounded-lg mt-1"
-                                            />
+                                            <div className="relative">
+                                                <Image
+                                                    width={100}
+                                                    height={100}
+                                                    src={formData.selfie}
+                                                    alt="Selfie"
+                                                    className="w-full h-full object-cover border rounded-lg mt-1"
+                                                />
+                                                {matchResult && (
+                                                    <Badge
+                                                        variant={matchResult.isMatch ? "default" : "destructive"}
+                                                        className={`absolute -top-2 -right-2 text-xs ${matchResult.isMatch
+                                                            ? "bg-green-100 text-green-800"
+                                                            : "bg-red-100 text-red-800"
+                                                            }`}
+                                                    >
+                                                        {matchResult.matchPercentage}%
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -885,10 +1170,107 @@ export default function IdentityVerificationForm() {
                         <Button
                             className="w-full py-3 text-lg"
                             size="lg"
-                            onClick={() => {
-                                toast.success("Identity verification request submitted successfully!")
-                                // You can add actual form submission logic here
+                            onClick={async () => {
+                                // Final validation before submission
+                                if (!isStepValid(3)) {
+                                    toast.error("Face verification is required before submission. Please complete all steps.")
+                                    return
+                                }
+
+                                try {
+                                    // Show loading toast
+                                    toast.loading("Submitting verification request...", { id: "submitting" })
+
+                                    // Convert uploaded files to base64
+                                    let frontIdBase64 = null;
+                                    let backIdBase64 = null;
+
+                                    if (formData.frontId) {
+                                        const reader = new FileReader();
+                                        frontIdBase64 = await new Promise((resolve) => {
+                                            reader.onload = () => resolve(reader.result as string);
+                                            reader.readAsDataURL(formData.frontId!);
+                                        });
+                                    }
+
+                                    if (formData.backId) {
+                                        const reader = new FileReader();
+                                        backIdBase64 = await new Promise((resolve) => {
+                                            reader.onload = () => resolve(reader.result as string);
+                                            reader.readAsDataURL(formData.backId!);
+                                        });
+                                    }
+
+                                    // Prepare form data for submission
+                                    const submissionData = {
+                                        fullName: formData.fullName,
+                                        phone: formData.phone,
+                                        email: formData.email,
+                                        province: formData.province,
+                                        address: formData.address,
+                                        licenseNumber: formData.licenseNumber,
+                                        dateOfBirth: formData.dateOfBirth,
+                                        bloodType: formData.bloodType,
+                                        frontId: frontIdBase64,
+                                        backId: backIdBase64,
+                                        frontIdCaptured: formData.frontIdCaptured,
+                                        backIdCaptured: formData.backIdCaptured,
+                                        selfie: formData.selfie,
+                                        matchResult: matchResult
+                                    }
+
+                                    // Debug logging
+                                    console.log('Submitting form data:', {
+                                        ...submissionData,
+                                        frontId: frontIdBase64 ? 'Present (converted to base64)' : 'Missing',
+                                        backId: backIdBase64 ? 'Present (converted to base64)' : 'Missing',
+                                        frontIdCaptured: formData.frontIdCaptured ? 'Present' : 'Missing',
+                                        backIdCaptured: formData.backIdCaptured ? 'Present' : 'Missing',
+                                        selfie: formData.selfie ? 'Present' : 'Missing',
+                                        matchResult: matchResult ? 'Present' : 'Missing'
+                                    })
+
+                                    // Submit to API
+                                    const response = await fetch('/api/stepper-form', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify(submissionData)
+                                    })
+
+                                    // Check if response is JSON
+                                    const contentType = response.headers.get('content-type')
+                                    if (!contentType || !contentType.includes('application/json')) {
+                                        const textResponse = await response.text()
+                                        console.error('Non-JSON response:', textResponse)
+                                        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`)
+                                    }
+
+                                    const result = await response.json()
+
+                                    if (!response.ok) {
+                                        throw new Error(result.error || result.details || 'Failed to submit verification request')
+                                    }
+
+                                    // Dismiss loading toast and show success
+                                    toast.dismiss("submitting")
+                                    toast.success("Identity verification request submitted successfully!", {
+                                        description: "Your verification request has been sent via email. We'll review it shortly."
+                                    })
+
+                                } catch (error) {
+                                    console.error('Error submitting form:', error)
+                                    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+                                    // Dismiss loading toast and show error
+                                    toast.dismiss("submitting")
+                                    toast.error(`Failed to submit verification request: ${errorMessage}`, {
+                                        description: "Please check your internet connection and try again."
+                                    })
+                                }
                             }}
+                            disabled={!isStepValid(4)}
                         >
                             <CheckCircle className="w-5 h-5 mr-2" />
                             Submit Verification Request
@@ -906,8 +1288,8 @@ export default function IdentityVerificationForm() {
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold mb-2">Identity Verification</h1>
-                    <p className="">Complete the steps below to verify your identity</p>
+                    <h1 className="text-3xl font-bold mb-2">Philippine Driver&apos;s License Verification</h1>
+                    <p className="">Complete the steps below to verify your identity using your Philippine Driver&apos;s License</p>
                 </div>
 
                 {/* Progress Bar */}
@@ -941,7 +1323,9 @@ export default function IdentityVerificationForm() {
                                                     ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-110"
                                                     : isCompleted
                                                         ? "bg-green-600 text-white border-green-600"
-                                                        : "bg-white text-gray-400 border-gray-300 hover:border-gray-400"
+                                                        : step.id === 3 && matchResult && !matchResult.isMatch
+                                                            ? "bg-red-100 text-red-600 border-red-300"
+                                                            : "bg-white text-gray-400 border-gray-300 hover:border-gray-400"
                                                 }
                                                 ${currentStep < step.id && !isValid ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
                                             `}
