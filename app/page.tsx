@@ -35,12 +35,12 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="p-6 bg-white/20 backdrop-blur-md rounded-xl shadow-lg">
               <h4 className="text-xl font-semibold text-white">
-                "Together, we achieve more. Your goals, our commitment. Join the movement. Smart solutions, from start to finish."
+                &ldquo;Together, we achieve more. Your goals, our commitment. Join the movement. Smart solutions, from start to finish.&rdquo;
               </h4>
             </div>
             <div className="p-6 bg-white/20 backdrop-blur-md rounded-xl shadow-lg">
               <h4 className="text-xl font-semibold text-white">
-                "Where challenges meet solutions, and ideas turn into impact. Be part of the change. Empowering businesses, every day."
+                &ldquo;Where challenges meet solutions, and ideas turn into impact. Be part of the change. Empowering businesses, every day.&rdquo;
               </h4>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function Home() {
                 <Image src="/images/cdl.jpg" alt="Logistics Solutions" width={400} height={192} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110" />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-semibold">CDL's Drivers</h3>
+                <h3 className="text-xl font-semibold">CDL&apos;s Drivers</h3>
                 <p className="text-muted-foreground mt-2">
                   We are in need for licensed CDL drivers to power our fleet. Competitive pay, top-notch equipment, and a dynamic team await
                 </p>
@@ -122,7 +122,7 @@ export default function Home() {
             <div className="bg-card p-6 rounded-lg shadow-md border">
               <Image src="/images/ara.png" alt="Aramex Logo" width={160} height={160} className="w-40 h-40 mx-auto mb-4" />
               <h4 className="text-xl font-semibold mb-2">
-                "QuickShift Lines has consistently delivered exceptional service, meeting our tight deadlines with precision."
+                &ldquo;QuickShift Lines has consistently delivered exceptional service, meeting our tight deadlines with precision.&rdquo;
               </h4>
               <p className="text-muted-foreground">
                 <strong>aramex</strong><br />
@@ -133,7 +133,7 @@ export default function Home() {
             <div className="bg-card p-6 rounded-lg shadow-md border">
               <Image src="/images/Dash.png" alt="DoorDash Logo" width={160} height={160} className="w-40 h-40 mx-auto mb-4" />
               <h4 className="text-xl font-semibold mb-2">
-                "Their commitment to quality and customer satisfaction sets QuickShift Lines apart in the industry."
+                &ldquo;Their commitment to quality and customer satisfaction sets QuickShift Lines apart in the industry.&rdquo;
               </h4>
               <p className="text-muted-foreground">
                 <strong>Doordash</strong><br />
@@ -144,7 +144,7 @@ export default function Home() {
             <div className="bg-card p-6 rounded-lg shadow-md border">
               <Image src="/images/amazon.png" alt="Amazon Logo" width={160} height={160} className="w-40 h-40 mx-auto mb-4" />
               <h4 className="text-xl font-semibold mb-2">
-                "Business is all about finding quality partners. Amazon Prime is proud to have QuickShift Lines on our side."
+                &ldquo;Business is all about finding quality partners. Amazon Prime is proud to have QuickShift Lines on our side.&rdquo;
               </h4>
               <p className="text-muted-foreground">
                 <strong>Amazon</strong><br />
@@ -168,7 +168,7 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
           <div className="text-primary-foreground">
             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">Coast-to-coast network</h1>
-            <p className="mt-4 text-lg text-primary-foreground/80">We're one of the largest providers in North America, with coverage that spans the US, Canada, Mexico and the Caribbean.</p>
+            <p className="mt-4 text-lg text-primary-foreground/80">We&apos;re one of the largest providers in North America, with coverage that spans the US, Canada, Mexico and the Caribbean.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/careers" className="border-2 border-primary-foreground text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary-foreground hover:text-primary transition-colors">
                 Apply for a job
@@ -206,7 +206,7 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-4">Transportation is mission-critical to your business</h2>
               <p>
                 <strong>So we put your freight first</strong><br />
-                We've created a transport network equipped with national capacity, leading technology and a world-class team. And we're always building and improving.
+                We&apos;ve created a transport network equipped with national capacity, leading technology and a world-class team. And we&apos;re always building and improving.
               </p>
             </div>
             <div>
@@ -287,8 +287,8 @@ export default function Home() {
               <Image src="/images/Mario.jpeg" alt="Fast Quotes" width={400} height={400} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/40 flex items-start justify-start p-4">
                 <p className="text-white text-lg font-semibold">
-                  Our team's commitment...<br /><br />
-                  "We provide a full-service solution, supporting our customers every step of the way from start to finish in the freight process—no matter the challenge"
+                  Our team&apos;s commitment...<br /><br />
+                  &ldquo;We provide a full-service solution, supporting our customers every step of the way from start to finish in the freight process—no matter the challenge&rdquo;
                   <br /><br />
                   - Mario M.Mason, CEO at QuickShift
                 </p>
@@ -299,7 +299,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-black/40 flex items-start justify-start p-4">
                 <p className="text-white text-lg font-semibold">
                   ...creates value for customers<br /><br />
-                  "Our strength lies in our proactive problem-solving approach. We reached out to our partners, identified key insights from their data, and demonstrated how we could help by putting in the effort upfront."
+                  &ldquo;Our strength lies in our proactive problem-solving approach. We reached out to our partners, identified key insights from their data, and demonstrated how we could help by putting in the effort upfront.&rdquo;
                   <br /><br />
                   — Sharon W. Strausbaugh, CFO
                 </p>
@@ -317,7 +317,7 @@ export default function Home() {
               Giving Back
             </h2>
             <p className="text-muted-foreground mb-8">
-              We believe that by joining together, we are able to bring goodness into this world. That's why Quickshift Lines, Inc. strongly supports the spread of food, supplies and resources in many needing countries and communities. While working with several non-profit organizations, we were able to bring help to Ukraine, Ethiopia, Mexico, Africa, Asia, Estonia and Russia. Read about our recent trips on these resources:
+              We believe that by joining together, we are able to bring goodness into this world. That&apos;s why Quickshift Lines, Inc. strongly supports the spread of food, supplies and resources in many needing countries and communities. While working with several non-profit organizations, we were able to bring help to Ukraine, Ethiopia, Mexico, Africa, Asia, Estonia and Russia. Read about our recent trips on these resources:
             </p>
 
             <div className="flex flex-wrap gap-4">

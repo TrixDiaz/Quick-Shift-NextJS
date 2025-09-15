@@ -32,7 +32,7 @@ export default function AboutPage() {
                         <div className="p-6 rounded-lg shadow-lg bg-primary-foreground/10 border border-primary-foreground/20">
                             <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Growing</h3>
                             <p className="text-primary-foreground/80 text-sm drop-shadow-sm">
-                                We're always looking to expand our reach, add new talent to help us grow, and become an even bigger part of our customers' success.
+                                We&apos;re always looking to expand our reach, add new talent to help us grow, and become an even bigger part of our customers&apos; success.
                             </p>
                         </div>
                         <div className="p-6 rounded-lg shadow-lg bg-primary-foreground/10 border border-primary-foreground/20">
@@ -49,10 +49,10 @@ export default function AboutPage() {
             <section className="py-12 bg-muted">
                 <div className="max-w-6xl mx-auto px-6 text-center">
                     <h2 className="text-3xl md:text-5xl font-extrabold">
-                        "Creating new ways to put your freight first"
+                        &ldquo;Creating new ways to put your freight first&rdquo;
                     </h2>
                     <p className="mt-6 text-lg max-w-3xl mx-auto text-muted-foreground">
-                        We're always improving our network, capacity and technology, so we can serve every customer with excellence.
+                        We&apos;re always improving our network, capacity and technology, so we can serve every customer with excellence.
                     </p>
                 </div>
             </section>
@@ -62,7 +62,7 @@ export default function AboutPage() {
                 <div className="max-w-6xl mx-auto px-6 text-left">
                     <h2 className="text-3xl font-bold mb-4">Our Journey</h2>
                     <p className="text-lg text-muted-foreground mb-10">
-                        From humble beginnings to becoming a trusted logistics partner, we've grown with our drivers, technology, and commitment to excellence.
+                        From humble beginnings to becoming a trusted logistics partner, we&apos;ve grown with our drivers, technology, and commitment to excellence.
                     </p>
 
                     {/* 4-Column Image Cards */}
@@ -110,7 +110,7 @@ export default function AboutPage() {
                             <div className="bg-card p-6 rounded-lg shadow border">
                                 <h3 className="text-xl font-semibold mb-2">Overachieve for customers</h3>
                                 <p className="text-muted-foreground">
-                                    We've created an LTL network equipped with national capacity, leading technology and a world-class team. And we're always building and improving.
+                                    We&apos;ve created an LTL network equipped with national capacity, leading technology and a world-class team. And we&apos;re always building and improving.
                                 </p>
                             </div>
                         </div>
@@ -134,7 +134,7 @@ export default function AboutPage() {
                             <div className="bg-card p-6 rounded-lg shadow border">
                                 <h3 className="text-xl font-semibold mb-2">Always improve</h3>
                                 <p className="text-muted-foreground">
-                                    We're forward-thinking and always investing in our people, technology and network to deliver better results every day. Innovation runs deep in our veins, as we find new ways to improve our performance for customers, employees and stakeholders.
+                                    We&apos;re forward-thinking and always investing in our people, technology and network to deliver better results every day. Innovation runs deep in our veins, as we find new ways to improve our performance for customers, employees and stakeholders.
                                 </p>
                             </div>
                         </div>
@@ -150,7 +150,7 @@ export default function AboutPage() {
                             <div className="bg-card p-6 rounded-lg shadow border">
                                 <h3 className="text-xl font-semibold mb-2">Be world-class in every way</h3>
                                 <p className="text-muted-foreground">
-                                    We're eager to be #1 in LTL. With competitive and direct to win, which means we don't settle for getting there over time. We stay focused on our customers and our shared vision.
+                                    We&apos;re eager to be #1 in LTL. With competitive and direct to win, which means we don&apos;t settle for getting there over time. We stay focused on our customers and our shared vision.
                                 </p>
                             </div>
                         </div>

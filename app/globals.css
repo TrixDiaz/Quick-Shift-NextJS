@@ -120,3 +120,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*---------------------*\
+    #Custom Scrollable side   
+\*----------------------*/
+/* The whole scrollbar */
+::-webkit-scrollbar {
+  width: 0.2rem;
+}
+
+/* The whole Scrollbar Track / Vertical Track */
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+/* The scrollbar thumb or the hand on track */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--primary), var(--secondary));
+}

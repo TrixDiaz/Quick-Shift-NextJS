@@ -1,4 +1,3 @@
-import Image from "next/image";
 
 interface MenuItem {
     title: string;
@@ -18,10 +17,6 @@ interface FooterProps {
     tagline?: string;
     menuItems?: MenuItem[];
     copyright?: string;
-    bottomLinks?: {
-        text: string;
-        url: string;
-    }[];
 }
 
 const Footer = ({
@@ -45,10 +40,6 @@ const Footer = ({
         },
     ],
     copyright = "© 2024 QuickShift Logistics. All rights reserved.",
-    bottomLinks = [
-        { text: "Terms and Conditions", url: "#" },
-        { text: "Privacy Policy", url: "#" },
-    ],
 }: FooterProps) => {
     return (
         <footer className="mt-16 border-t">
