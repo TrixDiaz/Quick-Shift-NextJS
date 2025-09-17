@@ -16,7 +16,7 @@ export default function Home() {
             <br />Trusted Partnerships
           </h1>
           <div className="mt-8">
-            <Link href="/careers" className="inline-block px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition-all duration-300">
+            <Link href="/services" className="inline-block px-8 py-4 text-lg font-semibold text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 transition-all duration-300">
               Apply Now
             </Link>
           </div>
@@ -170,7 +170,7 @@ export default function Home() {
             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">Coast-to-coast network</h1>
             <p className="mt-4 text-lg text-primary-foreground/80">We&apos;re one of the largest providers in North America, with coverage that spans the US, Canada, Mexico and the Caribbean.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/careers" className="border-2 border-primary-foreground text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary-foreground hover:text-primary transition-colors">
+              <Link href="/services" className="border-2 border-primary-foreground text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary-foreground hover:text-primary transition-colors">
                 Apply for a job
               </Link>
             </div>
@@ -233,7 +233,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex-shrink-0">
-              <Link href="/careers" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-colors">
+              <Link href="/services" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-colors">
                 Apply now!
               </Link>
             </div>
@@ -276,7 +276,7 @@ export default function Home() {
               </p>
             </div>
             <div className="flex-shrink-0">
-              <Link href="/careers" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-colors">
+              <Link href="/services" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-colors">
                 Apply now!
               </Link>
             </div>
