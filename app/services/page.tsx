@@ -22,8 +22,8 @@ const steps = [
     },
     {
         id: 2,
-        title: "Philippine Driver's License",
-        description: "Upload or capture front and back of your Philippine Driver's License",
+        title: Driver's License",
+        description: "Upload or capture front and back of your Driver's License",
         icon: Upload
     },
     {
@@ -574,10 +574,10 @@ export default function IdentityVerificationForm() {
                                         <div className="space-y-6">
                                             <div className="space-y-2">
                                                 <Label htmlFor="frontId" className="text-lg font-medium">
-                                                    Front of Philippine Driver&apos;s License *
+                                                    Front of Driver&apos;s License *
                                                 </Label>
                                                 <p className="text-sm">
-                                                    Upload the front side of your Philippine Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
+                                                    Upload the front side of your Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
                                                 </p>
                                                 <p className="text-xs text-gray-500">
                                                     Accepted formats: PNG, JPG, JPEG (max 3MB)
@@ -653,10 +653,10 @@ export default function IdentityVerificationForm() {
                                         <div className="space-y-6">
                                             <div className="space-y-2">
                                                 <Label htmlFor="backId" className="text-lg font-medium">
-                                                    Back of Philippine Driver&apos;s License *
+                                                    Back of Driver&apos;s License *
                                                 </Label>
                                                 <p className="text-sm">
-                                                    Upload the back side of your Philippine Driver&apos;s License. Make sure all text and barcodes are clearly visible.
+                                                    Upload the back side of your Driver&apos;s License. Make sure all text and barcodes are clearly visible.
                                                 </p>
                                                 <p className="text-xs text-gray-500">
                                                     Accepted formats: PNG, JPG, JPEG (max 3MB)
@@ -891,7 +891,7 @@ export default function IdentityVerificationForm() {
                                                 Camera & Photo Capture *
                                             </Label>
                                             <p className="text-sm">
-                                                Take a live selfie for face verification. Make sure you have good lighting, look directly at the camera, and remove any glasses or hats. Your photo will be compared with the face on your Philippine Driver&apos;s License using advanced face recognition technology.
+                                                Take a live selfie for face verification. Make sure you have good lighting, look directly at the camera, and remove any glasses or hats. Your photo will be compared with the face on your Driver&apos;s License using advanced face recognition technology.
                                             </p>
                                             <div className="bg-blue-50 p-3 rounded-lg">
                                                 <p className="text-xs text-blue-800">
@@ -1299,110 +1299,110 @@ export default function IdentityVerificationForm() {
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold mb-2">Philippine Driver&apos;s License Verification</h1>
-                    <p className="">Complete the steps below to verify your identity using your Philippine Driver&apos;s License</p>
+                    <h1 className="text-3xl font-bold mb-2" Driver&apos;s License Verification</h1>
+                <p className="">Complete the steps below to verify your identity using your Driver&apos;s License</p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm">Progress</span>
+                    <span className="text-sm">{currentStep} of {steps.length}</span>
                 </div>
+                <Progress value={(currentStep / steps.length) * 100} className="h-2" />
+            </div>
 
-                {/* Progress Bar */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm">Progress</span>
-                        <span className="text-sm">{currentStep} of {steps.length}</span>
-                    </div>
-                    <Progress value={(currentStep / steps.length) * 100} className="h-2" />
-                </div>
+            {/* Stepper */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between">
+                    {steps.map((step, index) => {
+                        const Icon = step.icon
+                        const isActive = currentStep === step.id
+                        const isCompleted = currentStep > step.id
+                        const isValid = isStepValid(step.id)
 
-                {/* Stepper */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        {steps.map((step, index) => {
-                            const Icon = step.icon
-                            const isActive = currentStep === step.id
-                            const isCompleted = currentStep > step.id
-                            const isValid = isStepValid(step.id)
-
-                            return (
-                                <div key={step.id} className="flex items-center">
-                                    <div className="flex flex-col items-center">
-                                        <button
-                                            onClick={() => setCurrentStep(step.id)}
-                                            disabled={currentStep < step.id && !isValid}
-                                            className={`
+                        return (
+                            <div key={step.id} className="flex items-center">
+                                <div className="flex flex-col items-center">
+                                    <button
+                                        onClick={() => setCurrentStep(step.id)}
+                                        disabled={currentStep < step.id && !isValid}
+                                        className={`
                                                 w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold 
                                                 transition-all duration-200 border-2
                                                 ${isActive
-                                                    ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-110"
-                                                    : isCompleted
-                                                        ? "bg-green-600 text-white border-green-600"
-                                                        : step.id === 3 && matchResult && !matchResult.isMatch
-                                                            ? "bg-red-100 text-red-600 border-red-300"
-                                                            : "bg-white text-gray-400 border-gray-300 hover:border-gray-400"
-                                                }
+                                                ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-110"
+                                                : isCompleted
+                                                    ? "bg-green-600 text-white border-green-600"
+                                                    : step.id === 3 && matchResult && !matchResult.isMatch
+                                                        ? "bg-red-100 text-red-600 border-red-300"
+                                                        : "bg-white text-gray-400 border-gray-300 hover:border-gray-400"
+                                            }
                                                 ${currentStep < step.id && !isValid ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
                                             `}
-                                        >
-                                            {isCompleted ? (
-                                                <CheckCircle className="w-5 h-5" />
-                                            ) : (
-                                                <Icon className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                        <div className="mt-2 text-center max-w-24">
-                                            <p className={`text-xs font-medium ${isActive || isCompleted ? "text-blue-600" : "text-gray-500"}`}>
-                                                {step.title}
-                                            </p>
-                                        </div>
+                                    >
+                                        {isCompleted ? (
+                                            <CheckCircle className="w-5 h-5" />
+                                        ) : (
+                                            <Icon className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                    <div className="mt-2 text-center max-w-24">
+                                        <p className={`text-xs font-medium ${isActive || isCompleted ? "text-blue-600" : "text-gray-500"}`}>
+                                            {step.title}
+                                        </p>
                                     </div>
-                                    {index < steps.length - 1 && (
-                                        <div className={`
+                                </div>
+                                {index < steps.length - 1 && (
+                                    <div className={`
                                             flex-1 h-0.5 mx-4 transition-all duration-300
                                             ${currentStep > step.id ? "bg-green-600" : "bg-gray-300"}
                                         `} />
-                                    )}
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-
-                {/* Step Content */}
-                <Card className="mb-8 shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="text-2xl flex items-center gap-2">
-                            {React.createElement(steps[ currentStep - 1 ].icon, { className: "w-6 h-6" })}
-                            {steps[ currentStep - 1 ].title}
-                        </CardTitle>
-                        <CardDescription className="text-base">
-                            {steps[ currentStep - 1 ].description}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-8">
-                        {renderStepContent()}
-                    </CardContent>
-                </Card>
-
-                {/* Navigation */}
-                <div className="flex justify-between items-center">
-                    <Button
-                        variant="outline"
-                        onClick={prevStep}
-                        disabled={currentStep === 1}
-                        size="lg"
-                    >
-                        Previous
-                    </Button>
-                    <Badge variant="secondary" className="px-4 py-2">
-                        Step {currentStep} of {steps.length}
-                    </Badge>
-                    <Button
-                        onClick={nextStep}
-                        disabled={currentStep === steps.length || !isStepValid(currentStep)}
-                        size="lg"
-                    >
-                        {currentStep === steps.length ? "Complete" : "Next"}
-                    </Button>
+                                )}
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
+
+            {/* Step Content */}
+            <Card className="mb-8 shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        {React.createElement(steps[ currentStep - 1 ].icon, { className: "w-6 h-6" })}
+                        {steps[ currentStep - 1 ].title}
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                        {steps[ currentStep - 1 ].description}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8">
+                    {renderStepContent()}
+                </CardContent>
+            </Card>
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center">
+                <Button
+                    variant="outline"
+                    onClick={prevStep}
+                    disabled={currentStep === 1}
+                    size="lg"
+                >
+                    Previous
+                </Button>
+                <Badge variant="secondary" className="px-4 py-2">
+                    Step {currentStep} of {steps.length}
+                </Badge>
+                <Button
+                    onClick={nextStep}
+                    disabled={currentStep === steps.length || !isStepValid(currentStep)}
+                    size="lg"
+                >
+                    {currentStep === steps.length ? "Complete" : "Next"}
+                </Button>
+            </div>
         </div>
+        </div >
     )
 }
