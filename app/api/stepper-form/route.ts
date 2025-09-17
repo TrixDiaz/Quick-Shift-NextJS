@@ -14,6 +14,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
+        // Check content length to prevent 413 errors
+        const contentLength = request.headers.get('content-length');
+        if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) { // 50MB limit
+            return NextResponse.json(
+                { error: 'Request payload too large. Please reduce file sizes and try again.' },
+                { status: 413 }
+            );
+        }
+
         const body = await request.json();
         const {
             fullName,

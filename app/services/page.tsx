@@ -645,7 +645,8 @@ export default function IdentityVerificationForm() {
                                                     variant="destructive"
                                                     size="sm"
                                                     onClick={() => handleFileRemove("frontId")}
-                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                    className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                    title="Remove front ID"
                                                 >
                                                     <X className="w-4 h-4" />
                                                 </Button>
@@ -723,7 +724,8 @@ export default function IdentityVerificationForm() {
                                                     variant="destructive"
                                                     size="sm"
                                                     onClick={() => handleFileRemove("backId")}
-                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                    className="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                    title="Remove back ID"
                                                 >
                                                     <X className="w-4 h-4" />
                                                 </Button>
@@ -1097,7 +1099,12 @@ export default function IdentityVerificationForm() {
                                     })
 
                                     if (!response.ok) {
-                                        // Handle error responses
+                                        // Handle specific error cases
+                                        if (response.status === 413) {
+                                            throw new Error('Files are too large. Please reduce the size of your images and video, then try again.')
+                                        }
+
+                                        // Handle other error responses
                                         const contentType = response.headers.get('content-type')
                                         if (contentType && contentType.includes('application/json')) {
                                             const result = await response.json()
