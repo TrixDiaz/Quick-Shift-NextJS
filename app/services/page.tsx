@@ -448,7 +448,7 @@ export default function IdentityVerificationForm() {
                 return (
                     <div className="grid gap-6">
                         <div className="text-center mb-6">
-                            <h3 className="text-lg font-semibold text-blue-600 mb-2">Philippine Driver&apos;s License Information</h3>
+                            <h3 className="text-lg font-semibold text-blue-600 mb-2">Driver&apos;s License Information</h3>
                             <p className="text-sm text-gray-600">Please enter your personal details as they appear on your driver&apos;s license</p>
                         </div>
 
