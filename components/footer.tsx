@@ -34,7 +34,6 @@ const Footer = ({
                 { text: "Home", url: "/" },
                 { text: "About", url: "/about" },
                 { text: "Services", url: "/services" },
-                { text: "Careers", url: "/careers" },
                 { text: "Contact", url: "/contact" },
             ],
         },

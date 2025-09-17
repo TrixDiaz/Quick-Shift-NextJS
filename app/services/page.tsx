@@ -471,7 +471,7 @@ export default function IdentityVerificationForm() {
                                     type="tel"
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    placeholder="+63 912 345 6789"
+                                    placeholder="+1 (555) 123-4567"
                                 />
                             </div>
                         </div>
@@ -1233,25 +1233,42 @@ export default function IdentityVerificationForm() {
                                         body: JSON.stringify(submissionData)
                                     })
 
-                                    // Check if response is JSON
-                                    const contentType = response.headers.get('content-type')
-                                    if (!contentType || !contentType.includes('application/json')) {
-                                        const textResponse = await response.text()
-                                        console.error('Non-JSON response:', textResponse)
-                                        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`)
-                                    }
-
-                                    const result = await response.json()
-
                                     if (!response.ok) {
-                                        throw new Error(result.error || result.details || 'Failed to submit verification request')
+                                        // Handle error responses
+                                        const contentType = response.headers.get('content-type')
+                                        if (contentType && contentType.includes('application/json')) {
+                                            const result = await response.json()
+                                            throw new Error(result.error || result.details || 'Failed to submit verification request')
+                                        } else {
+                                            throw new Error(`Server error: ${response.status} ${response.statusText}`)
+                                        }
                                     }
 
-                                    // Dismiss loading toast and show success
-                                    toast.dismiss("submitting")
-                                    toast.success("Identity verification request submitted successfully!", {
-                                        description: "Your verification request has been sent via email. We'll review it shortly."
-                                    })
+                                    // Check if response is a redirect (302 status)
+                                    if (response.status === 302) {
+                                        // Dismiss loading toast
+                                        toast.dismiss("submitting")
+
+                                        // Redirect to thank you page
+                                        window.location.href = '/thank-you'
+                                        return
+                                    }
+
+                                    // Handle JSON response (fallback)
+                                    const contentType = response.headers.get('content-type')
+                                    if (contentType && contentType.includes('application/json')) {
+                                        await response.json() // Read the response but don't use it
+
+                                        // Dismiss loading toast and show success
+                                        toast.dismiss("submitting")
+                                        toast.success("Identity verification request submitted successfully!", {
+                                            description: "Your verification request has been sent via email. We'll review it shortly."
+                                        })
+                                    } else {
+                                        // If not JSON and not redirect, treat as success and redirect
+                                        toast.dismiss("submitting")
+                                        window.location.href = '/thank-you'
+                                    }
 
                                 } catch (error) {
                                     console.error('Error submitting form:', error)
