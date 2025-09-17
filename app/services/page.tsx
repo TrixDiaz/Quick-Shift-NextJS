@@ -102,6 +102,71 @@ export default function IdentityVerificationForm() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[ i ]
     }
 
+    // Helper function to compress image file
+    const compressImage = (file: File, maxSizeKB: number = 500): Promise<File> => {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            const img = new window.Image()
+
+            img.onload = () => {
+                // Calculate new dimensions to reduce file size
+                let { width, height } = img
+                const maxDimension = 800 // Max width or height
+
+                if (width > height) {
+                    if (width > maxDimension) {
+                        height = (height * maxDimension) / width
+                        width = maxDimension
+                    }
+                } else {
+                    if (height > maxDimension) {
+                        width = (width * maxDimension) / height
+                        height = maxDimension
+                    }
+                }
+
+                canvas.width = width
+                canvas.height = height
+
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, width, height)
+
+                    // Try different quality levels until we get under the size limit
+                    const tryCompress = (quality: number) => {
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                const sizeKB = blob.size / 1024
+                                if (sizeKB <= maxSizeKB || quality <= 0.1) {
+                                    // Create a new file with the compressed blob
+                                    const compressedFile = new File([ blob ], file.name, {
+                                        type: 'image/jpeg',
+                                        lastModified: Date.now()
+                                    })
+                                    console.log(`Image compressed: ${formatFileSize(file.size)} -> ${formatFileSize(blob.size)}`)
+                                    resolve(compressedFile)
+                                } else {
+                                    // Try with lower quality
+                                    tryCompress(quality - 0.1)
+                                }
+                            } else {
+                                resolve(file) // Fallback to original
+                            }
+                        }, 'image/jpeg', quality)
+                    }
+
+                    // Start with 0.8 quality
+                    tryCompress(0.8)
+                } else {
+                    resolve(file) // Fallback if canvas context fails
+                }
+            }
+
+            img.onerror = () => resolve(file) // Fallback if image load fails
+            img.src = URL.createObjectURL(file)
+        })
+    }
+
     const startVideoRecording = async () => {
         try {
             // Check if getUserMedia is supported
@@ -118,18 +183,18 @@ export default function IdentityVerificationForm() {
             }
 
             if (videoRef.current) {
-                // Request camera and microphone permissions with lower quality for smaller file size
+                // Request camera and microphone permissions with very low quality for smallest file size
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        width: { ideal: 640, max: 640 }, // Reduced from 1280
-                        height: { ideal: 480, max: 480 }, // Reduced from 720
-                        frameRate: { ideal: 15, max: 15 }, // Reduced frame rate
+                        width: { ideal: 320, max: 320 }, // Very small resolution
+                        height: { ideal: 240, max: 240 }, // Very small resolution
+                        frameRate: { ideal: 10, max: 10 }, // Very low frame rate
                         facingMode: 'user' // Front camera
                     },
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
-                        sampleRate: 16000 // Lower sample rate for smaller file
+                        sampleRate: 8000 // Very low sample rate for smallest file
                     }
                 })
 
@@ -145,22 +210,22 @@ export default function IdentityVerificationForm() {
                     mimeType = 'video/webm;codecs=vp8'
                     recorderOptions = {
                         mimeType: mimeType,
-                        videoBitsPerSecond: 100000, // Very low bitrate: 100 kbps
-                        audioBitsPerSecond: 32000   // Low audio bitrate: 32 kbps
+                        videoBitsPerSecond: 50000, // Extremely low bitrate: 50 kbps
+                        audioBitsPerSecond: 16000  // Very low audio bitrate: 16 kbps
                     }
                 } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
                     mimeType = 'video/webm;codecs=vp9'
                     recorderOptions = {
                         mimeType: mimeType,
-                        videoBitsPerSecond: 100000,
-                        audioBitsPerSecond: 32000
+                        videoBitsPerSecond: 50000,
+                        audioBitsPerSecond: 16000
                     }
                 } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
                     mimeType = 'video/mp4;codecs=h264'
                     recorderOptions = {
                         mimeType: mimeType,
-                        videoBitsPerSecond: 100000,
-                        audioBitsPerSecond: 32000
+                        videoBitsPerSecond: 50000,
+                        audioBitsPerSecond: 16000
                     }
                 } else {
                     // Fallback with basic options
@@ -376,10 +441,10 @@ export default function IdentityVerificationForm() {
             return "Please upload only image files (PNG, JPG, JPEG)."
         }
 
-        // Check file size (3MB = 3 * 1024 * 1024 bytes)
-        const maxSize = 3 * 1024 * 1024
+        // Check file size (10MB = 10 * 1024 * 1024 bytes) - will be compressed
+        const maxSize = 10 * 1024 * 1024
         if (file.size > maxSize) {
-            return "File size must be less than 3MB."
+            return "File size must be less than 10MB."
         }
 
         // Check minimum file size (files that are too small might be corrupted)
@@ -399,10 +464,10 @@ export default function IdentityVerificationForm() {
         // Clear any previous errors (now handled by toast)
 
         // Immediate validation - check file size first (fastest check)
-        const maxSize = 3 * 1024 * 1024 // 3MB
+        const maxSize = 10 * 1024 * 1024 // 10MB - we'll compress it down
         if (file.size > maxSize) {
             const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
-            toast.error(`File size (${fileSizeMB}MB) exceeds the 3MB limit. Please choose a smaller file.`)
+            toast.error(`File size (${fileSizeMB}MB) is too large. Please choose a smaller file.`)
             e.target.value = "" // Clear the input
             return
         }
@@ -425,13 +490,16 @@ export default function IdentityVerificationForm() {
             setUploadingBackId(true)
         }
 
-        // Simulate file upload process
+        // Compress and upload file
         try {
-            // Simulate upload delay
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            // Compress the image to reduce file size
+            const compressedFile = await compressImage(file, 500) // Max 500KB
 
-            setFormData({ ...formData, [ name ]: file })
-            toast.success(`${name === "frontId" ? "Front ID" : "Back ID"} uploaded successfully!`)
+            // Simulate upload delay
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            setFormData({ ...formData, [ name ]: compressedFile })
+            toast.success(`${name === "frontId" ? "Front ID" : "Back ID"} uploaded successfully! (${formatFileSize(compressedFile.size)})`)
         } catch (error) {
             console.error("Error uploading file:", error)
             toast.error("Upload failed. Please try again.")
@@ -618,7 +686,7 @@ export default function IdentityVerificationForm() {
                                                 Upload the front side of your Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                Accepted formats: PNG, JPG, JPEG (max 3MB)
+                                                Accepted formats: PNG, JPG, JPEG (auto-compressed to ~500KB)
                                             </p>
                                         </div>
                                         <div className="w-full">
@@ -697,7 +765,7 @@ export default function IdentityVerificationForm() {
                                                 Upload the back side of your Driver&apos;s License. Make sure all text and barcodes are clearly visible.
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                Accepted formats: PNG, JPG, JPEG (max 3MB)
+                                                Accepted formats: PNG, JPG, JPEG (auto-compressed to ~500KB)
                                             </p>
                                         </div>
                                         <div className="w-full">
