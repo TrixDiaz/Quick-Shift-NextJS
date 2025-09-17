@@ -611,7 +611,6 @@ export default function IdentityVerificationForm() {
                                                                 accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
                                                                 onChange={handleFileChange}
                                                                 className="hidden"
-                                                                capture="environment"
                                                             />
                                                         </label>
                                                     </div>
@@ -690,7 +689,6 @@ export default function IdentityVerificationForm() {
                                                                 accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
                                                                 onChange={handleFileChange}
                                                                 className="hidden"
-                                                                capture="environment"
                                                             />
                                                         </label>
                                                     </div>
