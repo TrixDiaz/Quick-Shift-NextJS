@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
             if (videoBlob && videoBlob.trim()) {
                 const base64Data = processBase64Data(videoBlob);
                 attachments.push({
-                    filename: `verification_video_${fullName.replace(/\s+/g, '_')}.webm`,
+                    filename: `verification_video_${fullName.replace(/\s+/g, '_')}.mp4`,
                     content: base64Data,
                     encoding: 'base64'
                 });

@@ -90,7 +90,7 @@ export default function IdentityVerificationForm() {
 
                 // Create MediaRecorder
                 const recorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp9'
+                    mimeType: 'video/mp4;codecs=vp9'
                 })
 
                 const chunks: BlobPart[] = []
@@ -102,7 +102,7 @@ export default function IdentityVerificationForm() {
                 }
 
                 recorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' })
+                    const blob = new Blob(chunks, { type: 'video/mp4' })
                     const url = URL.createObjectURL(blob)
                     setFormData({ ...formData, videoBlob: blob, videoUrl: url })
                     toast.success("Video recorded successfully!")
