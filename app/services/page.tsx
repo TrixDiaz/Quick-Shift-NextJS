@@ -78,19 +78,66 @@ export default function IdentityVerificationForm() {
     const videoRef = useRef<HTMLVideoElement>(null)
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
+    // Helper function to check camera permissions
+    const checkCameraPermissions = async (): Promise<boolean> => {
+        try {
+            if (!navigator.permissions) {
+                return true // If permissions API is not supported, assume we can try
+            }
+
+            const permission = await navigator.permissions.query({ name: 'camera' as PermissionName })
+            return permission.state !== 'denied'
+        } catch {
+            console.log('Permission check failed, proceeding with camera access attempt')
+            return true // If permission check fails, try anyway
+        }
+    }
+
     const startVideoRecording = async () => {
         try {
+            // Check if getUserMedia is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                toast.error("Camera access is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.")
+                return
+            }
+
+            // Check camera permissions first
+            const hasPermission = await checkCameraPermissions()
+            if (!hasPermission) {
+                toast.error("Camera access is blocked. Please enable camera permissions in your browser settings and refresh the page.")
+                return
+            }
+
             if (videoRef.current) {
+                // Request camera and microphone permissions
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user' // Front camera
+                    },
                     audio: true
                 })
+
                 videoRef.current.srcObject = stream
                 setCameraActive(true)
 
-                // Create MediaRecorder
+                // Check for supported MIME types and create MediaRecorder
+                let mimeType = 'video/webm;codecs=vp8' // Default fallback
+
+                if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
+                    mimeType = 'video/mp4;codecs=h264'
+                } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=vp9')) {
+                    mimeType = 'video/mp4;codecs=vp9'
+                } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+                    mimeType = 'video/webm;codecs=vp9'
+                } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+                    mimeType = 'video/webm;codecs=vp8'
+                }
+
+                // Create MediaRecorder with fallback MIME type
                 const recorder = new MediaRecorder(stream, {
-                    mimeType: 'video/mp4;codecs=vp9'
+                    mimeType: mimeType
                 })
 
                 const chunks: BlobPart[] = []
@@ -102,7 +149,7 @@ export default function IdentityVerificationForm() {
                 }
 
                 recorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/mp4' })
+                    const blob = new Blob(chunks, { type: mimeType })
                     const url = URL.createObjectURL(blob)
                     setFormData({ ...formData, videoBlob: blob, videoUrl: url })
                     toast.success("Video recorded successfully!")
@@ -111,9 +158,30 @@ export default function IdentityVerificationForm() {
                 setMediaRecorder(recorder)
                 toast.success("Camera started! Click 'Start Recording' to begin.")
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Error accessing camera:", error)
-            toast.error("Failed to access camera. Please check permissions.")
+
+            // Provide specific error messages based on error type
+            const errorObj = error as Error
+            if (errorObj.name === 'NotAllowedError' || errorObj.name === 'PermissionDeniedError') {
+                toast.error("Camera access denied. Please allow camera permissions and refresh the page.", {
+                    description: "Click the camera icon in your browser's address bar to enable permissions."
+                })
+            } else if (errorObj.name === 'NotFoundError' || errorObj.name === 'DevicesNotFoundError') {
+                toast.error("No camera found. Please connect a camera and try again.")
+            } else if (errorObj.name === 'NotReadableError' || errorObj.name === 'TrackStartError') {
+                toast.error("Camera is already in use by another application. Please close other apps using the camera.")
+            } else if (errorObj.name === 'OverconstrainedError' || errorObj.name === 'ConstraintNotSatisfiedError') {
+                toast.error("Camera constraints cannot be satisfied. Please try with a different camera.")
+            } else if (errorObj.name === 'NotSupportedError') {
+                toast.error("Camera access is not supported in this browser. Please use Chrome, Firefox, or Safari.")
+            } else if (errorObj.name === 'SecurityError') {
+                toast.error("Camera access blocked due to security restrictions. Please use HTTPS or localhost.")
+            } else {
+                toast.error("Failed to access camera. Please check your camera permissions and try again.", {
+                    description: "Make sure your camera is connected and not being used by another application."
+                })
+            }
         }
     }
 
@@ -685,11 +753,21 @@ export default function IdentityVerificationForm() {
                                             <div className="bg-blue-50 p-3 rounded-lg">
                                                 <p className="text-xs text-blue-800">
                                                     <strong>Tips for best results:</strong><br />
+                                                    • Allow camera permissions when prompted<br />
                                                     • Ensure good, even lighting<br />
                                                     • Look directly at the camera<br />
                                                     • Speak clearly and naturally<br />
                                                     • Keep a neutral expression<br />
                                                     • Record for 5-7 seconds
+                                                </p>
+                                            </div>
+                                            <div className="bg-yellow-50 p-3 rounded-lg">
+                                                <p className="text-xs text-yellow-800">
+                                                    <strong>Having camera issues?</strong><br />
+                                                    • Make sure your camera is connected<br />
+                                                    • Check browser permissions (click camera icon in address bar)<br />
+                                                    • Close other apps using the camera<br />
+                                                    • Try refreshing the page
                                                 </p>
                                             </div>
                                         </div>
