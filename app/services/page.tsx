@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, Upload, Camera, User, Eye, X, Loader2, AlertCircle } from "lucide-react"
+import { CheckCircle, Upload, Camera, User, Eye, X, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 
@@ -23,13 +23,13 @@ const steps = [
     {
         id: 2,
         title: "Driver's License",
-        description: "Upload or capture front and back of your Driver's License",
+        description: "Upload front and back of your Driver's License",
         icon: Upload
     },
     {
         id: 3,
-        title: "Live Photo Verification",
-        description: "Take a live selfie for face matching verification with your ID photo",
+        title: "Video Live Verification",
+        description: "Record a live video for identity verification (5-7 seconds)",
         icon: Camera
     },
     {
@@ -65,109 +65,109 @@ export default function IdentityVerificationForm() {
         bloodType: "",
         frontId: null as File | null,
         backId: null as File | null,
-        frontIdCaptured: "" as string,
-        backIdCaptured: "" as string,
-        selfie: "" as string,
+        videoBlob: null as Blob | null,
+        videoUrl: "" as string,
     })
     const [ cameraActive, setCameraActive ] = useState(false)
-    const [ idCaptureMode, setIdCaptureMode ] = useState<"upload" | "capture">("upload")
-    const [ currentIdSide, setCurrentIdSide ] = useState<"front" | "back">("front")
     const [ uploadingFrontId, setUploadingFrontId ] = useState(false)
     const [ uploadingBackId, setUploadingBackId ] = useState(false)
-    const [ faceMatching, setFaceMatching ] = useState(false)
-    const [ matchResult, setMatchResult ] = useState<{
-        overallScore: number;
-        matchPercentage: number;
-        isMatch: boolean;
-        method: string;
-    } | null>(null)
+    const [ isRecording, setIsRecording ] = useState(false)
+    const [ recordingTime, setRecordingTime ] = useState(0)
+    const [ mediaRecorder, setMediaRecorder ] = useState<MediaRecorder | null>(null)
 
     const videoRef = useRef<HTMLVideoElement>(null)
-    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    const compareImages = async (image1Base64: string, image2Base64: string) => {
+    const startVideoRecording = async () => {
         try {
-            setFaceMatching(true)
-            setMatchResult(null)
-
-            // Validate base64 strings
-            if (!image1Base64 || !image2Base64) {
-                throw new Error('Invalid image data')
-            }
-
-            // Show loading toast
-            toast.loading("Verifying face match...", { id: "face-matching" })
-
-            const response = await fetch('/api/compare-faces', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id_image: image1Base64,
-                    live_image: image2Base64
+            if (videoRef.current) {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
                 })
-            })
+                videoRef.current.srcObject = stream
+                setCameraActive(true)
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || `API Error: ${response.status}`)
-            }
-
-            const result = await response.json()
-
-            if (!result.success) {
-                throw new Error(result.error || 'Face matching failed')
-            }
-
-            const matchPercentage = Math.round(result.match_percentage)
-            const isMatch = result.is_match && matchPercentage >= 60
-
-            const matchData = {
-                overallScore: result.match_percentage / 100,
-                matchPercentage,
-                isMatch,
-                method: result.method || "face_recognition"
-            }
-
-            setMatchResult(matchData)
-
-            // Dismiss loading toast and show result
-            toast.dismiss("face-matching")
-
-            if (isMatch) {
-                toast.success(`Face match verified! ${matchPercentage}% similarity`, {
-                    description: "You can now proceed to the next step."
+                // Create MediaRecorder
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm;codecs=vp9'
                 })
-            } else {
-                toast.error(`Face match failed! Only ${matchPercentage}% similarity.`, {
-                    description: `Please ensure good lighting and look directly at the camera. Minimum required: 60%. Try taking another photo.`
-                })
-            }
 
-            return matchData
+                const chunks: BlobPart[] = []
+
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data)
+                    }
+                }
+
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' })
+                    const url = URL.createObjectURL(blob)
+                    setFormData({ ...formData, videoBlob: blob, videoUrl: url })
+                    toast.success("Video recorded successfully!")
+                }
+
+                setMediaRecorder(recorder)
+                toast.success("Camera started! Click 'Start Recording' to begin.")
+            }
         } catch (error) {
-            console.error('Error comparing images:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+            console.error("Error accessing camera:", error)
+            toast.error("Failed to access camera. Please check permissions.")
+        }
+    }
 
-            // Dismiss loading toast and show error
-            toast.dismiss("face-matching")
-            toast.error(`Failed to verify face match: ${errorMessage}`, {
-                description: "Please check your internet connection and try again."
-            })
+    const startRecording = () => {
+        if (mediaRecorder && mediaRecorder.state === 'inactive') {
+            mediaRecorder.start()
+            setIsRecording(true)
+            setRecordingTime(0)
 
-            setMatchResult(null)
-            return null
-        } finally {
-            setFaceMatching(false)
+            // Start timer
+            recordingIntervalRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1)
+            }, 1000)
+
+            toast.info("Recording started...")
+        }
+    }
+
+    const stopRecording = () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop()
+            setIsRecording(false)
+
+            if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current)
+                recordingIntervalRef.current = null
+            }
+
+            toast.info("Recording stopped!")
+        }
+    }
+
+    const stopCamera = () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream
+            stream.getTracks().forEach(track => track.stop())
+            setCameraActive(false)
+            setIsRecording(false)
+            setRecordingTime(0)
+
+            if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current)
+                recordingIntervalRef.current = null
+            }
+
+            toast.info("Camera stopped")
         }
     }
 
     const nextStep = () => {
-        // Additional validation for step 3 (face verification)
+        // Additional validation for step 3 (video recording)
         if (currentStep === 3) {
-            if (!matchResult || !matchResult.isMatch) {
-                toast.error("Face verification is required before proceeding. Please ensure your face matches your ID photo.")
+            if (!formData.videoBlob || recordingTime < 5 || recordingTime > 7) {
+                toast.error("Video recording must be between 5-7 seconds before proceeding.")
                 return
             }
         }
@@ -179,8 +179,77 @@ export default function IdentityVerificationForm() {
         if (currentStep > 1) setCurrentStep(currentStep - 1)
     }
 
+    // Validation functions
+    const validateName = (value: string) => {
+        // Only allow letters, spaces, hyphens, and apostrophes
+        return /^[a-zA-Z\s\-']+$/.test(value)
+    }
+
+    const validatePhone = (value: string) => {
+        // Allow numbers, spaces, parentheses, hyphens, and plus sign
+        return /^[\d\s\(\)\-\+]+$/.test(value)
+    }
+
+    const validateSSN = (value: string) => {
+        // Allow numbers, spaces, and hyphens
+        return /^[\d\s\-]+$/.test(value)
+    }
+
+    const validateLicenseNumber = (value: string) => {
+        // Allow alphanumeric characters, spaces, and hyphens
+        return /^[a-zA-Z0-9\s\-]+$/.test(value)
+    }
+
+    const validateEmail = (value: string) => {
+        // Basic email validation
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+    }
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [ e.target.name ]: e.target.value })
+        const { name, value } = e.target
+
+        // Apply validation based on field type
+        switch (name) {
+            case 'fullName':
+                if (value === '' || validateName(value)) {
+                    setFormData({ ...formData, [ name ]: value })
+                } else {
+                    toast.error("Name can only contain letters, spaces, hyphens, and apostrophes")
+                }
+                break
+            case 'phone':
+                if (value === '' || validatePhone(value)) {
+                    setFormData({ ...formData, [ name ]: value })
+                } else {
+                    toast.error("Phone number can only contain numbers, spaces, parentheses, hyphens, and plus sign")
+                }
+                break
+            case 'ssn':
+                if (value === '' || validateSSN(value)) {
+                    setFormData({ ...formData, [ name ]: value })
+                } else {
+                    toast.error("SSN can only contain numbers, spaces, and hyphens")
+                }
+                break
+            case 'licenseNumber':
+                if (value === '' || validateLicenseNumber(value)) {
+                    setFormData({ ...formData, [ name ]: value })
+                } else {
+                    toast.error("License number can only contain letters, numbers, spaces, and hyphens")
+                }
+                break
+            case 'email':
+                // Allow typing but only show error for complete invalid emails
+                setFormData({ ...formData, [ name ]: value })
+                // Only show error if user has typed something and it's clearly invalid
+                if (value.length > 5 && !validateEmail(value)) {
+                    // Don't show toast for partial emails, just update the field
+                }
+                break
+            default:
+                setFormData({ ...formData, [ name ]: value })
+                break
+        }
     }
 
     const handleProvinceChange = (value: string) => {
@@ -287,155 +356,30 @@ export default function IdentityVerificationForm() {
         }
     }
 
-    const startCamera = async () => {
-        try {
-            if (videoRef.current) {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-                videoRef.current.srcObject = stream
-                setCameraActive(true)
-                // Reset match result when starting camera for retry
-                setMatchResult(null)
-                toast.success("Camera started successfully!")
-            }
-        } catch (error) {
-            console.error("Error accessing camera:", error)
-            toast.error("Failed to access camera. Please check permissions.")
-        }
-    }
-
-    const stopCamera = () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream
-            stream.getTracks().forEach(track => track.stop())
-            setCameraActive(false)
-            toast.info("Camera stopped")
-        }
-    }
-
-    const resetFaceMatching = () => {
-        setMatchResult(null)
-        setFormData({ ...formData, selfie: "" })
-    }
-
-    const enhanceImageQuality = (imageData: string): Promise<string> => {
-        return new Promise<string>((resolve) => {
-            const img = document.createElement('img')
-            img.onload = () => {
-                const canvas = document.createElement('canvas')
-                const ctx = canvas.getContext('2d')
-                if (ctx) {
-                    // Set canvas size to a standard size for better processing
-                    const targetSize = 400
-                    canvas.width = targetSize
-                    canvas.height = targetSize
-
-                    // Draw the image scaled to target size
-                    ctx.drawImage(img, 0, 0, targetSize, targetSize)
-
-                    // Get image data
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-                    const data = imageData.data
-
-                    // Convert to grayscale with enhanced processing
-                    for (let i = 0; i < data.length; i += 4) {
-                        // Use luminance formula for better grayscale conversion
-                        const gray = data[ i ] * 0.299 + data[ i + 1 ] * 0.587 + data[ i + 2 ] * 0.114
-
-                        // Apply slight contrast enhancement
-                        const enhanced = Math.min(255, Math.max(0, (gray - 128) * 1.1 + 128))
-
-                        data[ i ] = enhanced     // Red
-                        data[ i + 1 ] = enhanced // Green
-                        data[ i + 2 ] = enhanced // Blue
-                        // Alpha channel (data[i + 3]) remains unchanged
-                    }
-
-                    // Put the modified data back
-                    ctx.putImageData(imageData, 0, 0)
-
-                    // Convert back to data URL with high quality
-                    const enhancedDataUrl = canvas.toDataURL('image/png', 0.95)
-                    resolve(enhancedDataUrl)
-                } else {
-                    resolve(imageData) // Fallback to original if canvas context fails
-                }
-            }
-            img.src = imageData
-        })
-    }
-
-    const capturePhoto = async () => {
-        if (videoRef.current && canvasRef.current) {
-            const ctx = canvasRef.current.getContext("2d")
-            if (ctx) {
-                ctx.drawImage(videoRef.current, 0, 0, 320, 240)
-                const imageData = canvasRef.current.toDataURL("image/png")
-
-                // Enhance captured photo quality for better matching with ID photos
-                const enhancedImageData = await enhanceImageQuality(imageData)
-
-                setFormData({ ...formData, selfie: enhancedImageData })
-                stopCamera()
-                toast.success("Selfie captured and processed for face matching!")
-
-                // Reset previous match result when taking a new photo
-                setMatchResult(null)
-
-                // Trigger face matching if front ID is available
-                const frontIdImage = idCaptureMode === "upload" ? formData.frontId : formData.frontIdCaptured
-                if (frontIdImage) {
-                    if (idCaptureMode === "upload" && formData.frontId) {
-                        // Convert uploaded file to base64
-                        const reader = new FileReader()
-                        reader.onload = async () => {
-                            const base64String = reader.result as string
-                            await compareImages(base64String, enhancedImageData)
-                        }
-                        reader.readAsDataURL(formData.frontId)
-                    } else if (idCaptureMode === "capture" && formData.frontIdCaptured) {
-                        // Use captured front ID image
-                        await compareImages(formData.frontIdCaptured, enhancedImageData)
-                    }
-                } else {
-                    toast.warning("Please upload or capture your front ID first for face verification")
-                }
-            }
-        }
-    }
-
-    const captureIdPhoto = () => {
-        if (videoRef.current && canvasRef.current) {
-            const ctx = canvasRef.current.getContext("2d")
-            if (ctx) {
-                ctx.drawImage(videoRef.current, 0, 0, 400, 300)
-                const imageData = canvasRef.current.toDataURL("image/png")
-                if (currentIdSide === "front") {
-                    setFormData({ ...formData, frontIdCaptured: imageData })
-                    toast.success("Front ID captured successfully!")
-                } else {
-                    setFormData({ ...formData, backIdCaptured: imageData })
-                    toast.success("Back ID captured successfully!")
-                }
-                stopCamera()
-            }
-        }
-    }
 
     const isStepValid = (stepId: number): boolean => {
         switch (stepId) {
             case 1:
-                return !!(formData.fullName && formData.phone && formData.email && formData.state && formData.ssn && formData.licenseNumber)
+                return !!(
+                    formData.fullName &&
+                    validateName(formData.fullName) &&
+                    formData.phone &&
+                    validatePhone(formData.phone) &&
+                    formData.email &&
+                    validateEmail(formData.email) &&
+                    formData.state &&
+                    formData.ssn &&
+                    validateSSN(formData.ssn) &&
+                    formData.licenseNumber &&
+                    validateLicenseNumber(formData.licenseNumber)
+                )
             case 2:
-                if (idCaptureMode === "upload") {
-                    return !!(formData.frontId && formData.backId)
-                } else {
-                    return !!(formData.frontIdCaptured && formData.backIdCaptured)
-                }
+                return !!(formData.frontId && formData.backId)
             case 3:
-                // Step 3 requires both selfie and successful face match
-                return !!(formData.selfie && matchResult && matchResult.isMatch && matchResult.matchPercentage >= 60)
+                // Step 3 requires video recording between 5-7 seconds
+                return !!(formData.videoBlob && recordingTime >= 5 && recordingTime <= 7)
             case 4:
-                // Step 4 requires all previous steps to be valid, including face match
+                // Step 4 requires all previous steps to be valid
                 return isStepValid(1) && isStepValid(2) && isStepValid(3)
             default:
                 return false
@@ -461,7 +405,11 @@ export default function IdentityVerificationForm() {
                                     value={formData.fullName}
                                     onChange={handleChange}
                                     placeholder="Enter your full name as shown on license"
+                                    className={`${formData.fullName && !validateName(formData.fullName) ? 'border-red-500 focus:border-red-500' : ''}`}
                                 />
+                                {formData.fullName && !validateName(formData.fullName) && (
+                                    <p className="text-xs text-red-500">Name can only contain letters, spaces, hyphens, and apostrophes</p>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="phone">Phone Number *</Label>
@@ -472,7 +420,11 @@ export default function IdentityVerificationForm() {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     placeholder="+1 (555) 123-4567"
+                                    className={`${formData.phone && !validatePhone(formData.phone) ? 'border-red-500 focus:border-red-500' : ''}`}
                                 />
+                                {formData.phone && !validatePhone(formData.phone) && (
+                                    <p className="text-xs text-red-500">Phone can only contain numbers, spaces, parentheses, hyphens, and plus sign</p>
+                                )}
                             </div>
                         </div>
 
@@ -486,7 +438,11 @@ export default function IdentityVerificationForm() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="your.email@example.com"
+                                    className={`${formData.email && formData.email.length > 5 && !validateEmail(formData.email) ? 'border-red-500 focus:border-red-500' : ''}`}
                                 />
+                                {formData.email && formData.email.length > 5 && !validateEmail(formData.email) && (
+                                    <p className="text-xs text-red-500">Please enter a valid email address</p>
+                                )}
                             </div>
                             <div className="w-full space-y-2">
                                 <Label htmlFor="states">Country *</Label>
@@ -514,7 +470,11 @@ export default function IdentityVerificationForm() {
                                     value={formData.licenseNumber}
                                     onChange={handleChange}
                                     placeholder="e.g., N02-23-030042"
+                                    className={`${formData.licenseNumber && !validateLicenseNumber(formData.licenseNumber) ? 'border-red-500 focus:border-red-500' : ''}`}
                                 />
+                                {formData.licenseNumber && !validateLicenseNumber(formData.licenseNumber) && (
+                                    <p className="text-xs text-red-500">License number can only contain letters, numbers, spaces, and hyphens</p>
+                                )}
                             </div>
                             <div className="w-full space-y-2">
                                 <Label htmlFor="dateOfBirth">Date of Birth *</Label>
@@ -536,7 +496,11 @@ export default function IdentityVerificationForm() {
                                 value={formData.ssn}
                                 onChange={handleChange}
                                 placeholder="SSN"
+                                className={`${formData.ssn && !validateSSN(formData.ssn) ? 'border-red-500 focus:border-red-500' : ''}`}
                             />
+                            {formData.ssn && !validateSSN(formData.ssn) && (
+                                <p className="text-xs text-red-500">SSN can only contain numbers, spaces, and hyphens</p>
+                            )}
                         </div>
                     </div>
                 )
@@ -544,336 +508,163 @@ export default function IdentityVerificationForm() {
             case 2:
                 return (
                     <div className="w-full space-y-8">
-                        {/* Mode Selection */}
-                        <div className="flex justify-center mb-6">
-                            <div className="flex rounded-lg p-1">
-                                <Button
-                                    variant={idCaptureMode === "upload" ? "default" : "ghost"}
-                                    onClick={() => setIdCaptureMode("upload")}
-                                    className="px-6"
-                                >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Upload Photos
-                                </Button>
-                                <Button
-                                    variant={idCaptureMode === "capture" ? "default" : "ghost"}
-                                    onClick={() => setIdCaptureMode("capture")}
-                                    className="px-6"
-                                >
-                                    <Camera className="w-4 h-4 mr-2" />
-                                    Capture Photos
-                                </Button>
-                            </div>
+                        <div className="grid gap-8 md:grid-cols-2">
+                            <Card className="border-dashed border-2 transition-colors">
+                                <CardContent className="p-8 text-center">
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="frontId" className="text-lg font-medium">
+                                                Front of Driver&apos;s License *
+                                            </Label>
+                                            <p className="text-sm">
+                                                Upload the front side of your Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                Accepted formats: PNG, JPG, JPEG (max 3MB)
+                                            </p>
+                                        </div>
+                                        <div className="w-full">
+                                            {!formData.frontId && !uploadingFrontId && (
+                                                <div className="flex flex-col items-center justify-center w-full">
+                                                    <label
+                                                        htmlFor="frontId"
+                                                        className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
+                                                    >
+                                                        <svg
+                                                            className="w-10 h-10 mb-3 text-gray-400"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                            />
+                                                        </svg>
+                                                        <p className="text-sm text-gray-500">Click to upload front ID</p>
+                                                        <Input
+                                                            id="frontId"
+                                                            type="file"
+                                                            name="frontId"
+                                                            accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
+                                                            onChange={handleFileChange}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            )}
+
+                                            {uploadingFrontId && (
+                                                <div className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+                                                    <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
+                                                    <p className="text-sm text-blue-600 font-medium">Uploading front ID...</p>
+                                                    <p className="text-xs text-blue-500">Please wait</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {formData.frontId && (
+                                            <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                <Image
+                                                    width={400}
+                                                    height={300}
+                                                    src={URL.createObjectURL(formData.frontId)}
+                                                    alt="Front ID Preview"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleFileRemove("frontId")}
+                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-dashed border-2 transition-colors">
+                                <CardContent className="p-8 text-center">
+                                    <div className="space-y-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="backId" className="text-lg font-medium">
+                                                Back of Driver&apos;s License *
+                                            </Label>
+                                            <p className="text-sm">
+                                                Upload the back side of your Driver&apos;s License. Make sure all text and barcodes are clearly visible.
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                Accepted formats: PNG, JPG, JPEG (max 3MB)
+                                            </p>
+                                        </div>
+                                        <div className="w-full">
+                                            {!formData.backId && !uploadingBackId && (
+                                                <div className="flex flex-col items-center justify-center w-full">
+                                                    <label
+                                                        htmlFor="backId"
+                                                        className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
+                                                    >
+                                                        <svg
+                                                            className="w-10 h-10 mb-3 text-gray-400"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                            />
+                                                        </svg>
+                                                        <p className="text-sm text-gray-500">Click to upload back ID</p>
+                                                        <Input
+                                                            id="backId"
+                                                            type="file"
+                                                            name="backId"
+                                                            accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
+                                                            onChange={handleFileChange}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                </div>
+                                            )}
+
+                                            {uploadingBackId && (
+                                                <div className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
+                                                    <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
+                                                    <p className="text-sm text-blue-600 font-medium">Uploading back ID...</p>
+                                                    <p className="text-xs text-blue-500">Please wait</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {formData.backId && (
+                                            <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                <Image
+                                                    width={400}
+                                                    height={300}
+                                                    src={URL.createObjectURL(formData.backId)}
+                                                    alt="Back ID Preview"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleFileRemove("backId")}
+                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
-
-                        {idCaptureMode === "upload" ? (
-                            /* Upload Mode */
-                            <div className="grid gap-8 md:grid-cols-2">
-                                <Card className="border-dashed border-2 transition-colors">
-                                    <CardContent className="p-8 text-center">
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="frontId" className="text-lg font-medium">
-                                                    Front of Driver&apos;s License *
-                                                </Label>
-                                                <p className="text-sm">
-                                                    Upload the front side of your Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    Accepted formats: PNG, JPG, JPEG (max 3MB)
-                                                </p>
-                                            </div>
-                                            <div className="w-full">
-                                                {!formData.frontId && !uploadingFrontId && (
-                                                    <div className="flex flex-col items-center justify-center w-full">
-                                                        <label
-                                                            htmlFor="frontId"
-                                                            className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
-                                                        >
-                                                            <svg
-                                                                className="w-10 h-10 mb-3 text-gray-400"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                                />
-                                                            </svg>
-                                                            <p className="text-sm text-gray-500">Click to upload front ID</p>
-                                                            <Input
-                                                                id="frontId"
-                                                                type="file"
-                                                                name="frontId"
-                                                                accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
-                                                                onChange={handleFileChange}
-                                                                className="hidden"
-                                                            />
-                                                        </label>
-                                                    </div>
-                                                )}
-
-                                                {uploadingFrontId && (
-                                                    <div className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
-                                                        <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
-                                                        <p className="text-sm text-blue-600 font-medium">Uploading front ID...</p>
-                                                        <p className="text-xs text-blue-500">Please wait</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {formData.frontId && (
-                                                <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                    <Image
-                                                        width={400}
-                                                        height={300}
-                                                        src={URL.createObjectURL(formData.frontId)}
-                                                        alt="Front ID Preview"
-                                                        className="w-full h-full object-contain"
-                                                    />
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleFileRemove("frontId")}
-                                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-dashed border-2 transition-colors">
-                                    <CardContent className="p-8 text-center">
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="backId" className="text-lg font-medium">
-                                                    Back of Driver&apos;s License *
-                                                </Label>
-                                                <p className="text-sm">
-                                                    Upload the back side of your Driver&apos;s License. Make sure all text and barcodes are clearly visible.
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    Accepted formats: PNG, JPG, JPEG (max 3MB)
-                                                </p>
-                                            </div>
-                                            <div className="w-full">
-                                                {!formData.backId && !uploadingBackId && (
-                                                    <div className="flex flex-col items-center justify-center w-full">
-                                                        <label
-                                                            htmlFor="backId"
-                                                            className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg cursor-pointer transition"
-                                                        >
-                                                            <svg
-                                                                className="w-10 h-10 mb-3 text-gray-400"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                                />
-                                                            </svg>
-                                                            <p className="text-sm text-gray-500">Click to upload back ID</p>
-                                                            <Input
-                                                                id="backId"
-                                                                type="file"
-                                                                name="backId"
-                                                                accept="image/png,image/jpeg,image/jpg,.png,.jpg,.jpeg"
-                                                                onChange={handleFileChange}
-                                                                className="hidden"
-                                                            />
-                                                        </label>
-                                                    </div>
-                                                )}
-
-                                                {uploadingBackId && (
-                                                    <div className="flex flex-col items-center justify-center w-full max-w-md h-40 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
-                                                        <Loader2 className="w-10 h-10 mb-3 text-blue-500 animate-spin" />
-                                                        <p className="text-sm text-blue-600 font-medium">Uploading back ID...</p>
-                                                        <p className="text-xs text-blue-500">Please wait</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {formData.backId && (
-                                                <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                    <Image
-                                                        width={400}
-                                                        height={300}
-                                                        src={URL.createObjectURL(formData.backId)}
-                                                        alt="Back ID Preview"
-                                                        className="w-full h-full object-contain"
-                                                    />
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleFileRemove("backId")}
-                                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-700 w-8 h-8 p-0"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        ) : (
-                            /* Capture Mode */
-                            <div className="grid gap-8 md:grid-cols-2">
-                                <Card className="border-dashed border-2 transition-colors">
-                                    <CardContent className="p-8 text-center">
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-lg font-medium">
-                                                    Camera & Photo Capture *
-                                                </Label>
-                                                <p className="text-sm">
-                                                    Take photos of your ID. Make sure you have good lighting and the ID is clearly visible.
-                                                </p>
-                                            </div>
-
-                                            {/* Side Selection */}
-                                            <div className="flex justify-center gap-2">
-                                                <Button
-                                                    variant={currentIdSide === "front" ? "default" : "outline"}
-                                                    onClick={() => setCurrentIdSide("front")}
-                                                    size="sm"
-                                                >
-                                                    Front of ID
-                                                </Button>
-                                                <Button
-                                                    variant={currentIdSide === "back" ? "default" : "outline"}
-                                                    onClick={() => setCurrentIdSide("back")}
-                                                    size="sm"
-                                                >
-                                                    Back of ID
-                                                </Button>
-                                            </div>
-
-                                            {/* Camera View */}
-                                            <div className="relative flex justify-center">
-                                                <div className="relative">
-                                                    <video
-                                                        ref={videoRef}
-                                                        autoPlay
-                                                        className={`w-80 h-60 border-2 rounded-lg ${cameraActive ? "border-green-500" : "border-gray-300"
-                                                            } bg-gray-100`}
-                                                    />
-                                                    {!cameraActive && (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                                                            <div className="text-center">
-                                                                <Camera className="mx-auto h-24 w-24 text-gray-400 mb-2" />
-                                                                <p className="text-gray-500">Camera inactive</p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="flex gap-3 justify-center">
-                                                {!cameraActive ? (
-                                                    <Button onClick={startCamera} size="lg">
-                                                        <Camera className="w-4 h-4 mr-2" />
-                                                        Start Camera
-                                                    </Button>
-                                                ) : (
-                                                    <>
-                                                        <Button onClick={captureIdPhoto} size="lg">
-                                                            <Camera className="w-4 h-4 mr-2" />
-                                                            Capture {currentIdSide === "front" ? "Front" : "Back"}
-                                                        </Button>
-                                                        <Button variant="outline" onClick={stopCamera} size="lg">
-                                                            Stop Camera
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-
-                                            <canvas ref={canvasRef} width={400} height={300} className="hidden" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <Card className="border-dashed border-2 transition-colors">
-                                    <CardContent className="p-8 text-center">
-                                        <div className="space-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-lg font-medium">
-                                                    Captured Photos *
-                                                </Label>
-                                                <p className="text-sm">
-                                                    Your captured ID photos will appear here.
-                                                </p>
-                                            </div>
-
-                                            <div className="grid gap-4">
-                                                {/* Front ID Captured */}
-                                                <div className="space-y-2">
-                                                    <Label className="text-sm font-medium text-gray-600">Front of ID</Label>
-                                                    {formData.frontIdCaptured ? (
-                                                        <div className="relative w-full h-48 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                            <Image
-                                                                width={600}
-                                                                height={400}
-                                                                src={formData.frontIdCaptured}
-                                                                alt="Front ID Captured"
-                                                                className="w-full h-full object-contain"
-                                                            />
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="absolute top-2 left-2 bg-green-100 text-green-800"
-                                                            >
-                                                                <CheckCircle className="w-3 h-3 mr-1" />
-                                                                Captured
-                                                            </Badge>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg">
-                                                            <p className="text-gray-500 text-sm">Not captured yet</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Back ID Captured */}
-                                                <div className="space-y-2">
-                                                    <Label className="text-sm font-medium text-gray-600">Back of ID</Label>
-                                                    {formData.backIdCaptured ? (
-                                                        <div className="relative w-full h-48 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                            <Image
-                                                                width={600}
-                                                                height={400}
-                                                                src={formData.backIdCaptured}
-                                                                alt="Back ID Captured"
-                                                                className="w-full h-full object-contain"
-                                                            />
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="absolute top-2 left-2 bg-green-100 text-green-800"
-                                                            >
-                                                                <CheckCircle className="w-3 h-3 mr-1" />
-                                                                Captured
-                                                            </Badge>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg">
-                                                            <p className="text-gray-500 text-sm">Not captured yet</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
                     </div>
                 )
 
@@ -886,19 +677,19 @@ export default function IdentityVerificationForm() {
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <Label className="text-lg font-medium">
-                                                Camera & Photo Capture *
+                                                Video Live Verification *
                                             </Label>
                                             <p className="text-sm">
-                                                Take a live selfie for face verification. Make sure you have good lighting, look directly at the camera, and remove any glasses or hats. Your photo will be compared with the face on your  Driver&apos;s License using advanced face recognition technology.
+                                                Record a live video for identity verification. Make sure you have good lighting, look directly at the camera, and speak clearly. The video must be between 5-7 seconds long.
                                             </p>
                                             <div className="bg-blue-50 p-3 rounded-lg">
                                                 <p className="text-xs text-blue-800">
                                                     <strong>Tips for best results:</strong><br />
                                                     • Ensure good, even lighting<br />
                                                     • Look directly at the camera<br />
-                                                    • Remove glasses, hats, or face coverings<br />
+                                                    • Speak clearly and naturally<br />
                                                     • Keep a neutral expression<br />
-                                                    • Make sure your face fills the frame
+                                                    • Record for 5-7 seconds
                                                 </p>
                                             </div>
                                         </div>
@@ -909,6 +700,7 @@ export default function IdentityVerificationForm() {
                                                 <video
                                                     ref={videoRef}
                                                     autoPlay
+                                                    muted
                                                     className={`w-80 h-60 border-2 rounded-lg ${cameraActive ? "border-green-500" : "border-gray-300"
                                                         } bg-gray-100`}
                                                 />
@@ -920,21 +712,33 @@ export default function IdentityVerificationForm() {
                                                         </div>
                                                     </div>
                                                 )}
+                                                {isRecording && (
+                                                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-sm font-bold">
+                                                        REC {recordingTime}s
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
                                         <div className="flex gap-3 justify-center">
                                             {!cameraActive ? (
-                                                <Button onClick={startCamera} size="lg">
+                                                <Button onClick={startVideoRecording} size="lg">
                                                     <Camera className="w-4 h-4 mr-2" />
                                                     Start Camera
                                                 </Button>
                                             ) : (
                                                 <>
-                                                    <Button onClick={capturePhoto} size="lg">
-                                                        <Camera className="w-4 h-4 mr-2" />
-                                                        Capture Photo
-                                                    </Button>
+                                                    {!isRecording ? (
+                                                        <Button onClick={startRecording} size="lg" disabled={!mediaRecorder}>
+                                                            <Camera className="w-4 h-4 mr-2" />
+                                                            Start Recording
+                                                        </Button>
+                                                    ) : (
+                                                        <Button onClick={stopRecording} size="lg" variant="destructive">
+                                                            <Camera className="w-4 h-4 mr-2" />
+                                                            Stop Recording
+                                                        </Button>
+                                                    )}
                                                     <Button variant="outline" onClick={stopCamera} size="lg">
                                                         Stop Camera
                                                     </Button>
@@ -942,7 +746,28 @@ export default function IdentityVerificationForm() {
                                             )}
                                         </div>
 
-                                        <canvas ref={canvasRef} width={320} height={240} className="hidden" />
+                                        {recordingTime > 0 && (
+                                            <div className="text-center">
+                                                <p className="text-sm text-gray-600">
+                                                    Recording time: {recordingTime} seconds
+                                                    {recordingTime < 5 && (
+                                                        <span className="text-red-500 ml-2">
+                                                            (Minimum 5 seconds required)
+                                                        </span>
+                                                    )}
+                                                    {recordingTime > 7 && (
+                                                        <span className="text-red-500 ml-2">
+                                                            (Maximum 7 seconds allowed)
+                                                        </span>
+                                                    )}
+                                                    {recordingTime >= 5 && recordingTime <= 7 && (
+                                                        <span className="text-green-500 ml-2">
+                                                            ✓ Perfect length!
+                                                        </span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -952,95 +777,57 @@ export default function IdentityVerificationForm() {
                                     <div className="space-y-6">
                                         <div className="space-y-2">
                                             <Label className="text-lg font-medium">
-                                                Verification Photo *
+                                                Recorded Video *
                                             </Label>
                                             <p className="text-sm">
-                                                Your captured photo will appear here once taken.
+                                                Your recorded video will appear here once completed.
                                             </p>
                                         </div>
 
-                                        {/* Captured Image + Badge */}
-                                        {formData.selfie ? (
+                                        {/* Video Preview */}
+                                        {formData.videoUrl ? (
                                             <div className="flex flex-col items-center space-y-3">
-                                                <div className="relative w-full h-64 border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
-                                                    <Image
-                                                        width={320}
-                                                        height={240}
-                                                        src={formData.selfie}
-                                                        alt="Captured selfie"
+                                                <div className="relative w-full h-full border-2 hover:border-gray-400 rounded-lg overflow-hidden group">
+                                                    <video
+                                                        src={formData.videoUrl}
+                                                        controls
                                                         className="w-full h-full object-cover"
+                                                        style={{ minHeight: '300px' }}
                                                     />
                                                 </div>
 
-                                                {/* Face Matching Results */}
-                                                {faceMatching && (
-                                                    <div className="w-full flex items-center justify-center gap-2 bg-blue-100 text-blue-800 py-2 rounded-md">
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        <span>Verifying face match...</span>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className={`w-full flex items-center justify-center gap-1 py-2 rounded-md ${recordingTime >= 5 && recordingTime <= 7
+                                                        ? "bg-green-100 text-green-800"
+                                                        : recordingTime < 5
+                                                            ? "bg-yellow-100 text-yellow-800"
+                                                            : "bg-red-100 text-red-800"
+                                                        }`}
+                                                >
+                                                    <CheckCircle className="w-4 h-4" />
+                                                    {recordingTime >= 5 && recordingTime <= 7
+                                                        ? "Video recorded successfully!"
+                                                        : recordingTime < 5
+                                                            ? "Video recorded (minimum 5 seconds required)"
+                                                            : "Video recorded (maximum 7 seconds allowed)"
+                                                    }
+                                                </Badge>
+
+                                                <div className="text-center">
+                                                    <div className="text-2xl font-bold text-gray-800">
+                                                        {recordingTime}s
                                                     </div>
-                                                )}
-
-                                                {matchResult && !faceMatching && (
-                                                    <div className="w-full space-y-2">
-                                                        <Badge
-                                                            variant={matchResult.isMatch ? "default" : "destructive"}
-                                                            className={`w-full flex items-center justify-center gap-1 py-2 rounded-md ${matchResult.isMatch
-                                                                ? "bg-green-100 text-green-800 border-green-200"
-                                                                : "bg-red-100 text-red-800 border-red-200"
-                                                                }`}
-                                                        >
-                                                            {matchResult.isMatch ? (
-                                                                <CheckCircle className="w-4 h-4" />
-                                                            ) : (
-                                                                <AlertCircle className="w-4 h-4" />
-                                                            )}
-                                                            {matchResult.isMatch ? "Face Match Verified!" : "Face Match Failed"}
-                                                        </Badge>
-
-                                                        <div className="text-center">
-                                                            <div className="text-2xl font-bold text-gray-800">
-                                                                {matchResult.matchPercentage}%
-                                                            </div>
-                                                            <div className="text-sm text-gray-600">
-                                                                Similarity Score
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                Minimum required: 60%
-                                                            </div>
-                                                        </div>
-
-                                                        {!matchResult.isMatch && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    resetFaceMatching()
-                                                                    startCamera()
-                                                                }}
-                                                                className="w-full mt-2"
-                                                            >
-                                                                <Camera className="w-4 h-4 mr-2" />
-                                                                Retry Photo
-                                                            </Button>
-                                                        )}
+                                                    <div className="text-sm text-gray-600">
+                                                        Recording Duration
                                                     </div>
-                                                )}
-
-                                                {!matchResult && !faceMatching && (
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="w-full flex items-center justify-center gap-1 bg-green-100 text-green-800 py-2 rounded-md"
-                                                    >
-                                                        <CheckCircle className="w-4 h-4" />
-                                                        Photo captured successfully
-                                                    </Badge>
-                                                )}
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg">
                                                 <div className="text-center">
                                                     <Camera className="mx-auto h-16 w-16 text-gray-400 mb-2" />
-                                                    <p className="text-gray-500">No photo captured yet</p>
+                                                    <p className="text-gray-500">No video recorded yet</p>
                                                 </div>
                                             </div>
                                         )}
@@ -1103,55 +890,50 @@ export default function IdentityVerificationForm() {
                                 <CardTitle className="text-lg">Uploaded Documents</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid gap-4 md:grid-cols-3">
-                                    {/* Front ID - Upload or Capture */}
-                                    {(formData.frontId || formData.frontIdCaptured) && (
+                                <div className="grid gap-4 md:grid-cols-3 mb-2">
+                                    {/* Front ID */}
+                                    {formData.frontId && (
                                         <div className="text-center">
                                             <Label className="text-sm font-medium text-gray-600">Front ID</Label>
                                             <Image
                                                 width={100}
                                                 height={100}
-                                                src={formData.frontId ? URL.createObjectURL(formData.frontId) : (formData.frontIdCaptured || "")}
+                                                src={URL.createObjectURL(formData.frontId)}
                                                 alt="Front ID"
                                                 className="w-full h-full object-cover border rounded-lg mt-1"
                                             />
                                         </div>
                                     )}
-                                    {/* Back ID - Upload or Capture */}
-                                    {(formData.backId || formData.backIdCaptured) && (
+
+                                    {/* Back ID */}
+                                    {formData.backId && (
                                         <div className="text-center">
                                             <Label className="text-sm font-medium text-gray-600">Back ID</Label>
                                             <Image
                                                 width={100}
                                                 height={100}
-                                                src={formData.backId ? URL.createObjectURL(formData.backId) : (formData.backIdCaptured || "")}
+                                                src={URL.createObjectURL(formData.backId)}
                                                 alt="Back ID"
                                                 className="w-full h-full object-cover border rounded-lg mt-1"
                                             />
                                         </div>
                                     )}
-                                    {formData.selfie && (
+
+                                    {/* Video Recording */}
+                                    {formData.videoUrl && (
                                         <div className="text-center">
-                                            <Label className="text-sm font-medium text-gray-600">Verification Photo</Label>
+                                            <Label className="text-sm font-medium text-gray-600">Verification Video</Label>
                                             <div className="relative">
-                                                <Image
-                                                    width={100}
-                                                    height={100}
-                                                    src={formData.selfie}
-                                                    alt="Selfie"
+                                                <video
+                                                    src={formData.videoUrl}
                                                     className="w-full h-full object-cover border rounded-lg mt-1"
                                                 />
-                                                {matchResult && (
-                                                    <Badge
-                                                        variant={matchResult.isMatch ? "default" : "destructive"}
-                                                        className={`absolute -top-2 -right-2 text-xs ${matchResult.isMatch
-                                                            ? "bg-green-100 text-green-800"
-                                                            : "bg-red-100 text-red-800"
-                                                            }`}
-                                                    >
-                                                        {matchResult.matchPercentage}%
-                                                    </Badge>
-                                                )}
+                                                <Badge
+                                                    variant="default"
+                                                    className="absolute -top-2 -right-2 text-xs bg-green-100 text-green-800"
+                                                >
+                                                    {recordingTime}s
+                                                </Badge>
                                             </div>
                                         </div>
                                     )}
@@ -1165,7 +947,7 @@ export default function IdentityVerificationForm() {
                             onClick={async () => {
                                 // Final validation before submission
                                 if (!isStepValid(3)) {
-                                    toast.error("Face verification is required before submission. Please complete all steps.")
+                                    toast.error("Video recording between 5-7 seconds is required before submission. Please complete all steps.")
                                     return
                                 }
 
@@ -1176,6 +958,7 @@ export default function IdentityVerificationForm() {
                                     // Convert uploaded files to base64
                                     let frontIdBase64 = null;
                                     let backIdBase64 = null;
+                                    let videoBase64 = null;
 
                                     if (formData.frontId) {
                                         const reader = new FileReader();
@@ -1193,6 +976,14 @@ export default function IdentityVerificationForm() {
                                         });
                                     }
 
+                                    if (formData.videoBlob) {
+                                        const reader = new FileReader();
+                                        videoBase64 = await new Promise((resolve) => {
+                                            reader.onload = () => resolve(reader.result as string);
+                                            reader.readAsDataURL(formData.videoBlob!);
+                                        });
+                                    }
+
                                     // Prepare form data for submission
                                     const submissionData = {
                                         fullName: formData.fullName,
@@ -1205,10 +996,8 @@ export default function IdentityVerificationForm() {
                                         bloodType: formData.bloodType,
                                         frontId: frontIdBase64,
                                         backId: backIdBase64,
-                                        frontIdCaptured: formData.frontIdCaptured,
-                                        backIdCaptured: formData.backIdCaptured,
-                                        selfie: formData.selfie,
-                                        matchResult: matchResult
+                                        videoBlob: videoBase64,
+                                        recordingTime: recordingTime
                                     }
 
                                     // Debug logging
@@ -1216,10 +1005,8 @@ export default function IdentityVerificationForm() {
                                         ...submissionData,
                                         frontId: frontIdBase64 ? 'Present (converted to base64)' : 'Missing',
                                         backId: backIdBase64 ? 'Present (converted to base64)' : 'Missing',
-                                        frontIdCaptured: formData.frontIdCaptured ? 'Present' : 'Missing',
-                                        backIdCaptured: formData.backIdCaptured ? 'Present' : 'Missing',
-                                        selfie: formData.selfie ? 'Present' : 'Missing',
-                                        matchResult: matchResult ? 'Present' : 'Missing'
+                                        videoBlob: videoBase64 ? 'Present (converted to base64)' : 'Missing',
+                                        recordingTime: recordingTime
                                     })
 
                                     // Submit to API
@@ -1332,9 +1119,7 @@ export default function IdentityVerificationForm() {
                                                     ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-110"
                                                     : isCompleted
                                                         ? "bg-green-600 text-white border-green-600"
-                                                        : step.id === 3 && matchResult && !matchResult.isMatch
-                                                            ? "bg-red-100 text-red-600 border-red-300"
-                                                            : "bg-white text-gray-400 border-gray-300 hover:border-gray-400"
+                                                        : "bg-white text-gray-400 border-gray-300 hover:border-gray-400"
                                                 }
                                                 ${currentStep < step.id && !isValid ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
                                             `}

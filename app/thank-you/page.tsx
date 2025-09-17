@@ -7,13 +7,13 @@ import Link from "next/link";
 
 export default function ThankYouPage() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-2xl mx-auto shadow-xl">
+        <div className="min-h-screen flex items-center justify-center p-4">
+            <Card className="w-full max-w-4xl mx-auto shadow-xl">
                 <CardHeader className="text-center pb-8">
                     <div className="flex justify-center mb-4">
                         <CheckCircle className="h-20 w-20 text-green-500" />
                     </div>
-                    <CardTitle className="text-3xl font-bold text-gray-800 mb-2">
+                    <CardTitle className="text-3xl font-bold mb-2">
                         Thank You for Your Submission!
                     </CardTitle>
                     <CardDescription className="text-lg text-gray-600">
