@@ -98,7 +98,7 @@ export default function IdentityVerificationForm() {
             // Show loading toast
             toast.loading("Verifying face match...", { id: "face-matching" })
 
-            const response = await fetch('http://72.60.195.25/api/compare-faces', {
+            const response = await fetch('/api/compare-faces', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
