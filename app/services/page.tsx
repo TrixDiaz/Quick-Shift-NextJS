@@ -93,6 +93,15 @@ export default function IdentityVerificationForm() {
         }
     }
 
+    // Helper function to get file size in human readable format
+    const formatFileSize = (bytes: number): string => {
+        if (bytes === 0) return '0 Bytes'
+        const k = 1024
+        const sizes = [ 'Bytes', 'KB', 'MB', 'GB' ]
+        const i = Math.floor(Math.log(bytes) / Math.log(k))
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[ i ]
+    }
+
     const startVideoRecording = async () => {
         try {
             // Check if getUserMedia is supported
@@ -109,36 +118,57 @@ export default function IdentityVerificationForm() {
             }
 
             if (videoRef.current) {
-                // Request camera and microphone permissions
+                // Request camera and microphone permissions with lower quality for smaller file size
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
+                        width: { ideal: 640, max: 640 }, // Reduced from 1280
+                        height: { ideal: 480, max: 480 }, // Reduced from 720
+                        frameRate: { ideal: 15, max: 15 }, // Reduced frame rate
                         facingMode: 'user' // Front camera
                     },
-                    audio: true
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 16000 // Lower sample rate for smaller file
+                    }
                 })
 
                 videoRef.current.srcObject = stream
                 setCameraActive(true)
 
-                // Check for supported MIME types and create MediaRecorder
+                // Check for supported MIME types and create MediaRecorder with compression
                 let mimeType = 'video/webm;codecs=vp8' // Default fallback
+                let recorderOptions: MediaRecorderOptions = {}
 
-                if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
-                    mimeType = 'video/mp4;codecs=h264'
-                } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=vp9')) {
-                    mimeType = 'video/mp4;codecs=vp9'
+                // Prefer WebM with VP8 for better compression
+                if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+                    mimeType = 'video/webm;codecs=vp8'
+                    recorderOptions = {
+                        mimeType: mimeType,
+                        videoBitsPerSecond: 100000, // Very low bitrate: 100 kbps
+                        audioBitsPerSecond: 32000   // Low audio bitrate: 32 kbps
+                    }
                 } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
                     mimeType = 'video/webm;codecs=vp9'
-                } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
-                    mimeType = 'video/webm;codecs=vp8'
+                    recorderOptions = {
+                        mimeType: mimeType,
+                        videoBitsPerSecond: 100000,
+                        audioBitsPerSecond: 32000
+                    }
+                } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
+                    mimeType = 'video/mp4;codecs=h264'
+                    recorderOptions = {
+                        mimeType: mimeType,
+                        videoBitsPerSecond: 100000,
+                        audioBitsPerSecond: 32000
+                    }
+                } else {
+                    // Fallback with basic options
+                    recorderOptions = { mimeType: mimeType }
                 }
 
-                // Create MediaRecorder with fallback MIME type
-                const recorder = new MediaRecorder(stream, {
-                    mimeType: mimeType
-                })
+                // Create MediaRecorder with compression settings
+                const recorder = new MediaRecorder(stream, recorderOptions)
 
                 const chunks: BlobPart[] = []
 
@@ -152,7 +182,7 @@ export default function IdentityVerificationForm() {
                     const blob = new Blob(chunks, { type: mimeType })
                     const url = URL.createObjectURL(blob)
                     setFormData({ ...formData, videoBlob: blob, videoUrl: url })
-                    toast.success("Video recorded successfully!")
+                    toast.success(`Video recorded successfully! (${formatFileSize(blob.size)})`)
                 }
 
                 setMediaRecorder(recorder)
@@ -760,7 +790,8 @@ export default function IdentityVerificationForm() {
                                                     • Look directly at the camera<br />
                                                     • Speak clearly and naturally<br />
                                                     • Keep a neutral expression<br />
-                                                    • Record for 5-7 seconds
+                                                    • Record for 5-7 seconds<br />
+                                                    • Video is automatically optimized for small file size
                                                 </p>
                                             </div>
                                             <div className="bg-yellow-50 p-3 rounded-lg">
