@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, Upload, Camera, User, Eye, X, Loader2, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle, Upload, Camera, User, Eye, X, Loader2, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 import { AlertTitle } from "@/components/ui/alert"
@@ -30,7 +30,7 @@ const steps = [
     {
         id: 3,
         title: "Video Live Verification",
-        description: "Record a live video for identity verification (5-7 seconds)",
+        description: "Record a live video for identity verification (auto-stops after 7 seconds)",
         icon: Camera
     },
     {
@@ -291,10 +291,17 @@ export default function IdentityVerificationForm() {
 
             // Start timer
             recordingIntervalRef.current = setInterval(() => {
-                setRecordingTime(prev => prev + 1)
+                setRecordingTime(prev => {
+                    const newTime = prev + 1
+                    // Auto-stop recording after 7 seconds
+                    if (newTime >= 7) {
+                        stopRecording()
+                    }
+                    return newTime
+                })
             }, 1000)
 
-            toast.info("Recording started...")
+            toast.info("Recording started... (will auto-stop in 7 seconds)")
         }
     }
 
@@ -852,8 +859,8 @@ export default function IdentityVerificationForm() {
                                             </Label>
                                             <p className="text-sm text-muted-foreground">
                                                 Record a live video for identity verification. Make sure you have good lighting,
-                                                look directly at the camera, and speak clearly. The video must be between 5–7 seconds long
-                                                and recording is manual stop.
+                                                look directly at the camera, and speak clearly. The video will automatically stop after 7 seconds
+                                                and must be between 5–7 seconds long.
                                             </p>
 
                                             {/* Tips alert */}
@@ -881,7 +888,7 @@ export default function IdentityVerificationForm() {
                                                         <p>• Look directly at the camera</p>
                                                         <p>• Speak clearly and naturally</p>
                                                         <p>• Keep a neutral expression</p>
-                                                        <p>• Record for 5–7 seconds</p>
+                                                        <p>• Recording automatically stops after 7 seconds</p>
                                                         <p>• Video is automatically optimized for small file size</p>
                                                     </div>
                                                 )}
