@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle, Upload, Camera, User, Eye, X, Loader2 } from "lucide-react"
+import { CheckCircle, Upload, Camera, User, Eye, X, Loader2, ChevronDown, ChevronUp } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
+import { AlertTitle } from "@/components/ui/alert"
 
 const steps = [
     {
@@ -74,6 +75,8 @@ export default function IdentityVerificationForm() {
     const [ isRecording, setIsRecording ] = useState(false)
     const [ recordingTime, setRecordingTime ] = useState(0)
     const [ mediaRecorder, setMediaRecorder ] = useState<MediaRecorder | null>(null)
+    const [ showTips, setShowTips ] = useState(false)
+    const [ showTroubleshooting, setShowTroubleshooting ] = useState(false)
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -611,10 +614,10 @@ export default function IdentityVerificationForm() {
                                 )}
                             </div>
                             <div className="w-full space-y-2">
-                                <Label htmlFor="states">Country *</Label>
+                                <Label htmlFor="states">State *</Label>
                                 <Select value={formData.state} onValueChange={handleProvinceChange}>
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select your country" />
+                                        <SelectValue placeholder="Select your state" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-60 overflow-y-auto">
                                         {coutries.map((states) => (
@@ -686,7 +689,7 @@ export default function IdentityVerificationForm() {
                                                 Upload the front side of your Driver&apos;s License. Ensure the photo is clear and shows your face and license details.
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                Accepted formats: PNG, JPG, JPEG (auto-compressed to ~500KB)
+                                                Accepted formats: PNG, JPG, JPEG Maximum of 3MB (auto-compressed to ~500KB)
                                             </p>
                                         </div>
                                         <div className="w-full">
@@ -765,7 +768,7 @@ export default function IdentityVerificationForm() {
                                                 Upload the back side of your Driver&apos;s License. Make sure all text and barcodes are clearly visible.
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                Accepted formats: PNG, JPG, JPEG (auto-compressed to ~500KB)
+                                                Accepted formats: PNG, JPG, JPEG Maximum of 3MB (auto-compressed to ~500KB)
                                             </p>
                                         </div>
                                         <div className="w-full">
@@ -843,33 +846,72 @@ export default function IdentityVerificationForm() {
                             <Card className="border-dashed border-2 transition-colors">
                                 <CardContent className="p-8 text-center">
                                     <div className="space-y-6">
-                                        <div className="space-y-2">
+                                        <div className="space-y-3">
                                             <Label className="text-lg font-medium">
                                                 Video Live Verification *
                                             </Label>
-                                            <p className="text-sm">
-                                                Record a live video for identity verification. Make sure you have good lighting, look directly at the camera, and speak clearly. The video must be between 5-7 seconds long.
+                                            <p className="text-sm text-muted-foreground">
+                                                Record a live video for identity verification. Make sure you have good lighting,
+                                                look directly at the camera, and speak clearly. The video must be between 5–7 seconds long
+                                                and recording is manual stop.
                                             </p>
-                                            <div className="bg-blue-50 p-3 rounded-lg">
-                                                <p className="text-xs text-blue-800">
-                                                    <strong>Tips for best results:</strong><br />
-                                                    • Allow camera permissions when prompted<br />
-                                                    • Ensure good, even lighting<br />
-                                                    • Look directly at the camera<br />
-                                                    • Speak clearly and naturally<br />
-                                                    • Keep a neutral expression<br />
-                                                    • Record for 5-7 seconds<br />
-                                                    • Video is automatically optimized for small file size
-                                                </p>
+
+                                            {/* Tips alert */}
+                                            <div className="p-3 rounded-lg border">
+                                                <button
+                                                    onClick={() => setShowTips(!showTips)}
+                                                    className="flex items-center justify-between w-full text-left"
+                                                >
+                                                    <AlertTitle className="font-semibold text-sm">
+                                                        Tips for best results:
+                                                    </AlertTitle>
+
+                                                    <ChevronDown
+                                                        className={`h-4 w-4 transform transition-transform duration-300 ${showTips ? "rotate-180" : "rotate-0"
+                                                            }`}
+                                                    />
+                                                </button>
+
+
+                                                {showTips && (
+                                                    <div className="mt-3 text-xs space-y-1">
+                                                        <p className="font-semibold mb-2">These steps help ensure your video passes verification smoothly:</p>
+                                                        <p>• Allow camera permissions when prompted</p>
+                                                        <p>• Ensure good, even lighting</p>
+                                                        <p>• Look directly at the camera</p>
+                                                        <p>• Speak clearly and naturally</p>
+                                                        <p>• Keep a neutral expression</p>
+                                                        <p>• Record for 5–7 seconds</p>
+                                                        <p>• Video is automatically optimized for small file size</p>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="bg-yellow-50 p-3 rounded-lg">
-                                                <p className="text-xs text-yellow-800">
-                                                    <strong>Having camera issues?</strong><br />
-                                                    • Make sure your camera is connected<br />
-                                                    • Check browser permissions (click camera icon in address bar)<br />
-                                                    • Close other apps using the camera<br />
-                                                    • Try refreshing the page
-                                                </p>
+
+                                            {/* Troubleshooting alert */}
+                                            <div className="p-3 rounded-lg border">
+                                                <button
+                                                    onClick={() => setShowTroubleshooting(!showTroubleshooting)}
+                                                    className="flex items-center justify-between w-full text-left"
+                                                >
+                                                    <AlertTitle className="font-semibold text-sm">
+                                                        Having camera issues?
+                                                    </AlertTitle>
+
+                                                    <ChevronDown
+                                                        className={`h-4 w-4 transform transition-transform duration-300 ${showTroubleshooting ? "rotate-180" : "rotate-0"
+                                                            }`}
+                                                    />
+                                                </button>
+
+                                                {showTroubleshooting && (
+                                                    <div className="mt-3 text-xs space-y-1">
+                                                        <p className="font-semibold mb-2">Troubleshooting tips if your camera isn&apos;t working:</p>
+                                                        <p>• Make sure your camera is connected</p>
+                                                        <p>• Check browser permissions (click camera icon in address bar)</p>
+                                                        <p>• Close other apps using the camera</p>
+                                                        <p>• Try refreshing the page</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
