@@ -17,7 +17,7 @@ export default function ThankYouPage() {
                         Thank You for Your Submission!
                     </CardTitle>
                     <CardDescription className="text-lg text-gray-600">
-                        Your Philippine Driver&apos;s License verification request has been successfully submitted.
+                        Your Driver&apos;s License verification request has been successfully submitted.
                     </CardDescription>
                 </CardHeader>
 
