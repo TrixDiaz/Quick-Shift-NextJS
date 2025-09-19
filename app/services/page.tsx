@@ -186,18 +186,22 @@ export default function IdentityVerificationForm() {
             }
 
             if (videoRef.current) {
-                // Request camera and microphone permissions with very low quality for smallest file size
+                // Request camera and microphone permissions with optimized settings for mobile
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
-                        width: { ideal: 320, max: 320 }, // Very small resolution
-                        height: { ideal: 240, max: 240 }, // Very small resolution
-                        frameRate: { ideal: 10, max: 10 }, // Very low frame rate
-                        facingMode: 'user' // Front camera
+                        width: { ideal: 640, max: 1280 }, // Better resolution for mobile
+                        height: { ideal: 480, max: 720 }, // Better resolution for mobile
+                        frameRate: { ideal: 15, max: 30 }, // Better frame rate
+                        facingMode: 'user', // Front camera
+                        // iOS specific constraints to hide native interface
+                        ...(navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad') ? {
+                            advanced: [ { facingMode: 'user' } ]
+                        } : {})
                     },
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
-                        sampleRate: 8000 // Very low sample rate for smallest file
+                        sampleRate: 16000 // Better audio quality
                     }
                 })
 
@@ -862,6 +866,15 @@ export default function IdentityVerificationForm() {
                                                 look directly at the camera, and speak clearly. The video will automatically stop after 7 seconds
                                                 and must be between 5–7 seconds long.
                                             </p>
+                                            {(navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) && (
+                                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                                                    <p className="font-medium text-blue-800 mb-1">📱 iPhone/iPad Instructions:</p>
+                                                    <p className="text-blue-700">
+                                                        The camera preview will appear directly in this browser window.
+                                                        If the native iPhone camera opens, please close it and use only the preview shown below.
+                                                    </p>
+                                                </div>
+                                            )}
 
                                             {/* Tips alert */}
                                             <div className="p-3 rounded-lg border">
@@ -917,6 +930,14 @@ export default function IdentityVerificationForm() {
                                                         <p>• Check browser permissions (click camera icon in address bar)</p>
                                                         <p>• Close other apps using the camera</p>
                                                         <p>• Try refreshing the page</p>
+                                                        {(navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) && (
+                                                            <>
+                                                                <p className="font-semibold mt-3 mb-1">📱 iPhone/iPad Users:</p>
+                                                                <p>• The camera preview should appear directly in this browser window</p>
+                                                                <p>• If you see the native iPhone camera interface, please close it and use only the preview shown here</p>
+                                                                <p>• Make sure you&apos;re using Safari or Chrome for best compatibility</p>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -929,8 +950,14 @@ export default function IdentityVerificationForm() {
                                                     ref={videoRef}
                                                     autoPlay
                                                     muted
+                                                    playsInline
                                                     className={`w-80 h-60 border-2 rounded-lg ${cameraActive ? "border-green-500" : "border-gray-300"
-                                                        } bg-gray-100`}
+                                                        } bg-gray-100 ios-camera-fix`}
+                                                    style={{
+                                                        objectFit: 'cover',
+                                                        transform: 'scaleX(-1)', // Mirror the video for selfie view
+                                                        WebkitTransform: 'scaleX(-1)'
+                                                    }}
                                                 />
                                                 {!cameraActive && (
                                                     <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">

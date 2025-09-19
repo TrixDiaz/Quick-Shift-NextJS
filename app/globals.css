@@ -138,3 +138,57 @@
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(var(--primary), var(--secondary));
 }
+
+/* iOS Camera Interface Fix */
+.ios-camera-fix {
+  /* Hide iOS native camera interface overlay */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Hide iOS camera controls and overlays */
+.ios-camera-fix::-webkit-media-controls {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-panel {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-play-button {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-volume-slider {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-mute-button {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-timeline {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-current-time-display {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-time-remaining-display {
+  display: none !important;
+}
+
+.ios-camera-fix::-webkit-media-controls-fullscreen-button {
+  display: none !important;
+}
+
+/* Prevent iOS from showing native camera interface */
+@supports (-webkit-touch-callout: none) {
+  .ios-camera-fix {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
