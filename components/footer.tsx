@@ -1,3 +1,5 @@
+import Link from "next/link";
+import Image from "next/image";
 
 interface MenuItem {
     title: string;
@@ -21,12 +23,12 @@ interface FooterProps {
 
 const Footer = ({
     logo = {
-        src: "/images/partners.png",
-        alt: "QuickShift Logo",
-        title: "QuickShift",
+        src: "/images/logo.png",
+        alt: "Logo",
+        title: "TransQuick",
         url: "/",
     },
-    tagline = "Connecting skilled drivers with opportunities since 2019.",
+    tagline = `Connecting skilled drivers with opportunities since 2025.`,
     menuItems = [
         {
             title: "Company",
@@ -38,20 +40,20 @@ const Footer = ({
             ],
         },
     ],
-    copyright = "© 2024 QuickShift Logistics. All rights reserved.",
+    copyright = `© ${new Date().getFullYear()} QuickShift Logistics. All rights reserved.`,
 }: FooterProps) => {
     return (
         <footer className="mt-16 border-t">
             <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
                 {/* Brand */}
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                        <span className="inline-block w-10 h-10 rounded-full bg-primary"></span>
-                        <span className="text-2xl font-extrabold tracking-wide">{logo.title}</span>
-                    </div>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                        {tagline}
-                    </p>
+                    {/* Logo */}
+                    <Link href={logo.url} className="flex items-center gap-2">
+                        <Image height={200} width={100} src={logo.src} alt={logo.alt} className="h-8 w-8 object-contain" />
+                        {logo.title && <span className="font-bold text-lg">{logo.title}</span>}
+                    </Link>
+                    {/* Tagline */}
+                    <p className="text-sm text-muted-foreground">{tagline}</p>
                 </div>
 
                 {/* Company Links */}
@@ -73,7 +75,7 @@ const Footer = ({
                     <h4 className="text-lg font-semibold mb-4">Contact</h4>
                     <ul className="space-y-3 text-muted-foreground text-sm">
                         <li>904 W 30 1/2 St Austin, TX 78705<br />United States</li>
-                        <li>Email: <a href="mailto:info@quick-shift.us" className="hover:text-primary transition-colors">info@quick-shift.us</a></li>
+                        <li>Email: <a href="mailto:info@Transquick.us" className="hover:text-primary transition-colors">info@Transquick.us</a></li>
                         <li>Phone: <a href="tel:+12512615451" className="hover:text-primary transition-colors">+1 251-261-5451</a></li>
                     </ul>
                 </div>

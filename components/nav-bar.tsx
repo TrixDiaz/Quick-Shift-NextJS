@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface MenuItem {
     title: string;
@@ -26,9 +27,9 @@ interface NavbarProps {
 const Navbar = ({
     logo = {
         url: "/",
-        src: "/images/partners.png",
-        alt: "QuickShift Logo",
-        title: "QuickShift",
+        src: "/images/logo.png",
+        alt: "Logo",
+        title: "TransQuick",
     },
     menu = [
         { title: "Home", url: "/" },
@@ -53,10 +54,8 @@ const Navbar = ({
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <Link href={logo.url} className="flex items-center gap-2">
-                        <span className="inline-block w-8 h-8 rounded-2xl bg-primary"></span>
-                        <span className="text-2xl font-extrabold tracking-tight">
-                            {logo.title}
-                        </span>
+                        <Image height={200} width={100} src={logo.src} alt={logo.alt} className="h-8 w-8 object-contain" />
+                        {logo.title && <span className="font-bold text-lg">{logo.title}</span>}
                     </Link>
 
                     {/* Desktop Menu */}
@@ -103,7 +102,7 @@ const Navbar = ({
                     </div>
                 )}
             </div>
-        </nav>
+        </nav >
     );
 };
 

@@ -7,9 +7,9 @@ export default function Home() {
   return (
     <div>
       {/* About Header */}
-      <section className="py-20 bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/images/ship2.jpg')" }}>
+      <section className="py-20 bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: "url('/images/white-truck.png')" }}>
         <div className="absolute inset-0 bg-black/40"></div>
-        <div className="relative max-w-8xl mx-auto px-10 text-right">
+        <div className="relative max-w-8xl mx-auto px-10 text-left">
           <h1 className="text-4xl md:text-7xl font-bold text-white leading-tight drop-shadow-lg">
             Join the team
             <br />Movement with
@@ -20,7 +20,7 @@ export default function Home() {
               Apply Now
             </Link>
           </div>
-          <div className="mt-10 flex justify-end">
+          <div className="mt-10 flex justify-start">
             <div className="bg-gray-800 p-4 rounded-xl w-fit">
               <Image src="/images/partners.png" alt="Partner Logos" width={800} height={200} className="w-full max-w-2xl" />
             </div>
@@ -161,22 +161,19 @@ export default function Home() {
       </div>
 
       {/* Hero */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary/90 to-primary/70">
-        <svg className="absolute opacity-30 -right-12 -top-12" width="360" height="360" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <path fill="currentColor" d="M37.7,-58.5C49.7,-50.7,61.8,-42.3,66.7,-30.6C71.5,-18.9,69.2,-3.8,65.8,10.3C62.3,24.4,57.7,37.5,48.9,49.4C40.1,61.2,27.1,71.8,12.7,74.1C-1.7,76.4,-17.4,70.4,-31.7,62.6C-45.9,54.8,-58.8,45.1,-63.9,32.1C-69,19.2,-66.4,3,-61.4,-10.2C-56.4,-23.5,-49,-33.9,-39.9,-42.2C-30.7,-50.6,-19.9,-56.9,-7.8,-63.1C4.3,-69.3,17.6,-75.3,29.1,-71.8C40.5,-68.4,50.1,-55.6,37.7,-58.5Z" transform="translate(100 100)" />
-        </svg>
+      <header className="relative overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/images/orange-truck.jfif')" }}>
         <div className="relative max-w-7xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-2 gap-10 items-center">
-          <div className="text-primary-foreground">
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">Coast-to-coast network</h1>
-            <p className="mt-4 text-lg text-primary-foreground/80">We&apos;re one of the largest providers in North America, with coverage that spans the US, Canada, Mexico and the Caribbean.</p>
+          <div className="text-slate-200 drop-shadow-lg drop-shadow-slate-700">
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-slate-200 drop-shadow-lg drop-shadow-slate-700">Coast-to-coast network</h1>
+            <p className="mt-4 text-lg text-slate-200 drop-shadow-lg drop-shadow-slate-700">We&apos;re one of the largest providers in North America, with coverage that spans the US, Canada, Mexico and the Caribbean.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/services" className="border-2 border-primary-foreground text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary-foreground hover:text-primary transition-colors">
+              <Link href="/services" className="border-2 px-6 py-3 rounded-lg text-slate-200 drop-shadow-lg drop-shadow-slate-700 hover:bg-slate-800 transition">
                 Apply for a job
               </Link>
             </div>
           </div>
-          <div className="bg-primary-foreground/10 rounded-2xl p-6 shadow-xl border border-primary-foreground/20">
-            <ul className="grid grid-cols-2 gap-4 text-primary-foreground">
+          <div className="bg-primary-foreground/10 rounded-2xl p-6 shadow-xl border border-slate-600/50">
+            <ul className="grid grid-cols-2 gap-4 text-slate-200 drop-shadow-lg drop-shadow-slate-700">
               <li className="stat-card">
                 <div className="text-3xl font-bold">13,000</div>
                 <div className="text-sm">Drivers</div>
